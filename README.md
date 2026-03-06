@@ -69,7 +69,8 @@ npm install
 cp .env.example .env
 # Fill in your GROQ_API_KEY and MONGO_URI
 
-npm run dev  # starts on http://localhost:5000
+node serve.js 
+node seed.js
 ```
 
 ### Frontend Setup
