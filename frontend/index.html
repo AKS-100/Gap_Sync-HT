@@ -721,6 +721,9 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
   .study-body{flex-direction:column}
   .study-msg-bubble{max-width:90%}
 }
+.sl-mat-item{position:relative;padding:10px 12px;border-radius:10px;border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all .18s;background:rgba(255,255,255,.02)}
+.sl-mat-item:hover{border-color:var(--border-hi);background:rgba(255,255,255,.04)}
+.sl-mat-item.sl-active{border-color:rgba(57,255,138,.4);background:rgba(57,255,138,.06)}
 </style>
 </head>
 <body>
@@ -3117,516 +3120,484 @@ if (!isConfigured()) {
   }
 }
 
+
 // ═══════════════════════════════════════════════════════
-// STUDY LLM — AI-Powered Learning Assistant
+// STUDY LLM — Complete Rewrite (clean & working)
 // ═══════════════════════════════════════════════════════
-const StudyLLM = (() => {
-  let materials = []; // { id, type, name, content, url, addedAt }
-  let messages = [];  // { role, text, time }
-  let activeMaterialIds = new Set();
-  let isLoading = false;
 
-  const TYPE_META = {
-    link: { icon: '🔗', label: 'Link' },
-    youtube: { icon: '▶️', label: 'YouTube' },
-    video: { icon: '🎬', label: 'Video' },
-    lecture: { icon: '🎓', label: 'Lecture Notes' },
-    pdf: { icon: '📄', label: 'PDF / Doc' },
-    text: { icon: '📝', label: 'Text / Notes' },
-  };
+// ------- State -------
+let SL_materials = [];
+let SL_messages  = [];
+let SL_active    = new Set(); // String IDs
+let SL_loading   = false;
 
-  function detectType(url) {
-    if (!url) return 'text';
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-    if (/\.(pdf)$/i.test(url)) return 'pdf';
-    if (/\.(mp4|webm|mov|avi)$/i.test(url)) return 'video';
-    if (url.startsWith('http')) return 'link';
-    return 'text';
-  }
+const SL_TYPES = {
+  link:    { icon: '🔗', label: 'Link' },
+  youtube: { icon: '▶️', label: 'YouTube' },
+  video:   { icon: '🎬', label: 'Video' },
+  lecture: { icon: '🎓', label: 'Lecture Notes' },
+  pdf:     { icon: '📄', label: 'PDF / Doc' },
+  text:    { icon: '📝', label: 'Text / Notes' },
+};
 
-  function save() {
-    try { localStorage.setItem('study_materials', JSON.stringify(materials)); } catch(e) {}
-  }
+// ------- Storage -------
+function SL_save() {
+  try { localStorage.setItem('sl_mats', JSON.stringify(SL_materials)); } catch(e) {}
+}
+function SL_load() {
+  try {
+    const s = localStorage.getItem('sl_mats');
+    SL_materials = s ? JSON.parse(s) : [];
+  } catch(e) { SL_materials = []; }
+  SL_active = new Set();
+}
 
-  function load() {
-    try {
-      const s = localStorage.getItem('study_materials');
-      if (s) materials = JSON.parse(s);
-    } catch(e) {}
-  }
-
-  function addMaterial(data) {
-    const mat = {
-      id: Date.now() + Math.random(),
-      type: data.type || detectType(data.url || ''),
-      name: data.name || 'Untitled',
-      content: data.content || '',
-      url: data.url || '',
-      addedAt: new Date().toISOString()
-    };
-    materials.unshift(mat);
-    save();
-    renderMaterialsList();
-    return mat;
-  }
-
-  function deleteMaterial(id) {
-    materials = materials.filter(m => m.id !== id);
-    activeMaterialIds.delete(id);
-    save();
-    renderMaterialsList();
-    updateContextPills();
-  }
-
-  function toggleActiveMaterial(id) {
-    if (activeMaterialIds.has(id)) {
-      activeMaterialIds.delete(id);
-    } else {
-      activeMaterialIds.add(id);
-    }
-    renderMaterialsList();
-    updateContextPills();
-  }
-
-  function renderMaterialsList() {
-    const list = document.getElementById('study-mat-list');
-    if (!list) return;
-    if (!materials.length) {
-      list.innerHTML = `<div style="text-align:center;padding:28px 16px;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8">No materials yet.<br>Add links, videos, or notes<br>to start studying.</div>`;
-      return;
-    }
-    list.innerHTML = materials.map(m => {
-      const meta = TYPE_META[m.type] || TYPE_META.text;
-      const isActive = activeMaterialIds.has(m.id);
-      const display = m.url || m.content.slice(0, 50);
-      return `
-        <div class="study-material-item ${isActive ? 'active' : ''}" onclick="StudyLLM.toggleActiveMaterial(${m.id})" id="smat-${m.id}">
-          <div class="study-mat-type">${meta.icon} ${meta.label} ${isActive ? '· <span style="color:var(--green)">Active</span>' : ''}</div>
-          <div class="study-mat-name">${escHtml(m.name)}</div>
-          ${display ? `<div class="study-mat-meta">${escHtml(display.slice(0,60))}${display.length>60?'…':''}</div>` : ''}
-          <button class="study-mat-del" onclick="event.stopPropagation();StudyLLM.deleteMaterial(${m.id})" title="Remove">✕</button>
-        </div>`;
-    }).join('');
-  }
-
-  function updateContextPills() {
-    const container = document.getElementById('study-ctx-pills');
-    if (!container) return;
-    const active = materials.filter(m => activeMaterialIds.has(m.id));
-    if (!active.length) {
-      container.innerHTML = '';
-      return;
-    }
-    container.innerHTML = active.map(m => `
-      <div class="study-ctx-pill">
-        ${TYPE_META[m.type]?.icon || '📎'} ${escHtml(m.name.slice(0,20))}${m.name.length>20?'…':''}
-        <span class="pill-x" onclick="StudyLLM.toggleActiveMaterial(${m.id})">✕</span>
-      </div>`).join('');
-  }
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function timeStr() {
-    return new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function appendMessage(role, text) {
-    const chat = document.getElementById('study-chat-msgs');
-    if (!chat) return;
-    const isAI = role === 'ai';
-    const av = isAI ? '🤖' : '👤';
-    const div = document.createElement('div');
-    div.className = `study-msg ${role}`;
-    div.innerHTML = `
-      <div class="study-msg-av">${av}</div>
-      <div>
-        <div class="study-msg-bubble">${formatMd(text)}</div>
-        <div class="study-msg-time">${timeStr()}</div>
-      </div>`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  function showTyping() {
-    const chat = document.getElementById('study-chat-msgs');
-    if (!chat) return;
-    const el = document.createElement('div');
-    el.className = 'study-msg ai';
-    el.id = 'study-typing-ind';
-    el.innerHTML = `
-      <div class="study-msg-av">🤖</div>
-      <div class="study-typing"><span></span><span></span><span></span></div>`;
-    chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  function hideTyping() {
-    const el = document.getElementById('study-typing-ind');
-    if (el) el.remove();
-  }
-
-  function formatMd(text) {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.+?)`/g, '<code>$1</code>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>')
-      .replace(/^/, '<p>').replace(/$/, '</p>')
-      .replace(/<p><\/p>/g, '');
-  }
-
-  function buildSystemPrompt() {
-    const active = materials.filter(m => activeMaterialIds.has(m.id));
-    let sys = `You are StudyBot, an expert AI learning assistant embedded in GapSync — an AI Career Intelligence platform for students in India.
-
-You help students understand study materials, summarize content, answer questions, create quizzes, and build structured learning paths. Be concise, clear, and pedagogically effective.
-
-Format your responses with clear structure. Use **bold** for key terms and \`code\` for technical terms. Keep explanations accessible for college students.`;
-
-    if (active.length) {
-      sys += '\n\n## Active Study Materials\nThe student has shared the following materials for context:\n\n';
-      active.forEach((m, i) => {
-        sys += `### Material ${i+1}: ${m.name} (${TYPE_META[m.type]?.label || m.type})\n`;
-        if (m.url) sys += `URL: ${m.url}\n`;
-        if (m.content) sys += `Content/Notes:\n${m.content}\n`;
-        sys += '\n';
-      });
-      sys += 'Use these materials as the primary context for answering the student\'s questions. Summarize them, explain concepts from them, or create study aids based on them.';
-    } else {
-      sys += '\n\nNo specific materials are selected. Answer based on your knowledge of the topic. Suggest the student adds materials from the sidebar for more targeted help.';
-    }
-
-    return sys;
-  }
-
-  async function sendMessage(userText) {
-    if (!userText.trim() || isLoading) return;
-    isLoading = true;
-
-    // Hide welcome screen
-    const welcome = document.getElementById('study-welcome-screen');
-    if (welcome) welcome.style.display = 'none';
-
-    appendMessage('user', userText);
-    messages.push({ role: 'user', content: userText });
-
-    const btn = document.getElementById('study-send-btn');
-    if (btn) btn.disabled = true;
-    showTyping();
-
-    try {
-      const apiMessages = messages.slice(-12).map(m => ({ role: m.role, content: m.content }));
-      
-      // Get API key from storage or prompt user
-      let apiKey = localStorage.getItem('study_groq_key') || '';
-      if (!apiKey) {
-        hideTyping();
-        showApiKeyPrompt(userText);
-        isLoading = false;
-        if (btn) btn.disabled = false;
-        return;
-      }
-
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 1024,
-          messages: [
-            { role: 'system', content: buildSystemPrompt() },
-            ...apiMessages
-          ]
-        })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        hideTyping();
-        if (res.status === 401) {
-          localStorage.removeItem('study_groq_key');
-          appendMessage('ai', '🔑 **Invalid API key.** Your key has been cleared. Please send a message again to re-enter it.');
-        } else {
-          appendMessage('ai', `⚠️ API error (${res.status}): ${errData.error?.message || 'Unknown error. Please try again.'}`);
-        }
-        isLoading = false;
-        if (btn) btn.disabled = false;
-        return;
-      }
-
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response. Please try again.';
-
-      hideTyping();
-      appendMessage('ai', reply);
-      messages.push({ role: 'assistant', content: reply });
-
-    } catch(e) {
-      hideTyping();
-      appendMessage('ai', `⚠️ **Network error:** ${e.message || 'Could not reach the API. Make sure you are not blocking requests from localhost or file:// in your browser.'}`);
-    }
-
-    isLoading = false;
-    if (btn) btn.disabled = false;
-    const ta = document.getElementById('study-msg-input');
-    if (ta) { ta.value = ''; ta.style.height = 'auto'; }
-  }
-
-  function openAddMaterial() {
-    const ov = document.getElementById('study-add-modal');
-    if (ov) ov.classList.add('open');
-    // reset form
-    document.getElementById('study-add-type-tabs').querySelectorAll('.study-type-tab').forEach((t,i) => {
-      t.classList.toggle('active', i === 0);
-    });
-    document.getElementById('study-add-name').value = '';
-    document.getElementById('study-add-url').value = '';
-    document.getElementById('study-add-content').value = '';
-    switchAddType('link');
-  }
-
-  function closeAddMaterial() {
-    const ov = document.getElementById('study-add-modal');
-    if (ov) ov.classList.remove('open');
-  }
-
-  function switchAddType(type) {
-    document.querySelectorAll('#study-add-type-tabs .study-type-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.type === type);
-    });
-    const urlRow = document.getElementById('study-url-row');
-    const contentRow = document.getElementById('study-content-row');
-    if (type === 'text' || type === 'lecture') {
-      if (urlRow) urlRow.style.display = 'none';
-      if (contentRow) contentRow.style.display = 'block';
-    } else {
-      if (urlRow) urlRow.style.display = 'block';
-      if (contentRow) contentRow.style.display = type === 'pdf' ? 'block' : 'none';
-    }
-    document.getElementById('study-add-modal').dataset.type = type;
-  }
-
-  function confirmAddMaterial() {
-    const type = document.getElementById('study-add-modal').dataset.type || 'link';
-    const name = document.getElementById('study-add-name').value.trim();
-    const url = document.getElementById('study-add-url').value.trim();
-    const content = document.getElementById('study-add-content').value.trim();
-    if (!name) { document.getElementById('study-add-name').focus(); return; }
-    const mat = addMaterial({ type, name, url, content });
-    activeMaterialIds.add(mat.id);
-    renderMaterialsList();
-    updateContextPills();
-    closeAddMaterial();
-  }
-
-  function showApiKeyPrompt(pendingMsg) {
-    const chat = document.getElementById('study-chat-msgs');
-    const welcome = document.getElementById('study-welcome-screen');
-    if (welcome) welcome.style.display = 'none';
-    if (!chat) return;
-
-    const id = 'apikey-prompt-' + Date.now();
-    const div = document.createElement('div');
-    div.className = 'study-msg ai';
-    div.id = id;
-    div.innerHTML = `
-      <div class="study-msg-av">🤖</div>
-      <div style="flex:1;max-width:80%">
-        <div class="study-msg-bubble" style="background:rgba(57,255,138,.07);border-color:rgba(57,255,138,.3)">
-          <p>🔑 <strong>Groq API Key Required</strong></p>
-          <p>StudyBot uses the <strong>Groq API (100% Free!)</strong> — powered by LLaMA 3.3 70B. Enter your free Groq key below to get started.</p>
-          <div style="background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.25);border-radius:9px;padding:10px 13px;margin:10px 0;font-family:var(--mono);font-size:11px;color:var(--amber);line-height:1.8">
-            📋 <strong>How to get your FREE key:</strong><br>
-            1. Go to <strong>console.groq.com</strong><br>
-            2. Sign up (free) → click <strong>API Keys</strong><br>
-            3. Click <strong>Create API Key</strong> → copy it<br>
-            4. Paste below ↓ (starts with <code>gsk_</code>)
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-            <input type="password" id="apikey-input-${id}" placeholder="gsk_…" style="flex:1;min-width:200px;background:rgba(255,255,255,.06);border:1px solid rgba(57,255,138,.4);border-radius:9px;padding:9px 13px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none">
-            <button onclick="StudyLLM.saveApiKey('${id}','${pendingMsg.replace(/'/g,"\\'").replace(/\n/g,' ')}')" style="background:linear-gradient(135deg,#1a8f52,var(--green));border:none;color:#06120d;border-radius:9px;padding:9px 16px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Save &amp; Send →</button>
-          </div>
-          <p style="font-size:10px;color:var(--muted);margin-top:8px">🔒 Stored only in your browser's localStorage. Never shared anywhere.</p>
-        </div>
-      </div>`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-    setTimeout(() => document.getElementById(`apikey-input-${id}`)?.focus(), 100);
-  }
-
-  function saveApiKey(promptId, pendingMsg) {
-    const input = document.getElementById(`apikey-input-${promptId}`);
-    const key = input?.value?.trim();
-    if (!key || !key.startsWith('gsk_')) {
-      if (input) { input.style.borderColor = 'var(--red)'; input.placeholder = 'Must start with gsk_…'; }
-      return;
-    }
-    localStorage.setItem('study_groq_key', key);
-    const el = document.getElementById(promptId);
-    if (el) el.remove();
-    appendMessage('ai', '✅ **Groq API key saved!** Sending your message now…');
-    setTimeout(() => sendMessage(pendingMsg), 600);
-  }
-
-  return { init, addMaterial, deleteMaterial, toggleActiveMaterial, openAddMaterial, closeAddMaterial, switchAddType, confirmAddMaterial, sendMessage, saveApiKey };
-})();
-
+// ------- Open / Close overlay -------
 function openStudyLLM() {
-  const ov = document.getElementById('study-overlay');
-  if (ov) { ov.classList.add('open'); StudyLLM.init(); }
+  SL_load();
+  SL_renderList();
+  document.getElementById('study-overlay').style.display = 'flex';
 }
 function closeStudyLLM() {
-  const ov = document.getElementById('study-overlay');
-  if (ov) ov.classList.remove('open');
+  document.getElementById('study-overlay').style.display = 'none';
 }
 
-function studySendFromInput() {
-  const ta = document.getElementById('study-msg-input');
-  if (ta) StudyLLM.sendMessage(ta.value);
+// ------- Add Material Modal -------
+function SL_openModal() {
+  // reset
+  document.getElementById('sl-name').value = '';
+  document.getElementById('sl-url').value  = '';
+  document.getElementById('sl-notes').value = '';
+  SL_switchType('link');
+  document.getElementById('sl-add-modal').style.display = 'flex';
 }
-
-function studyInputKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    studySendFromInput();
+function SL_closeModal() {
+  document.getElementById('sl-add-modal').style.display = 'none';
+}
+function SL_switchType(type) {
+  document.querySelectorAll('.sl-type-btn').forEach(b => {
+    b.style.background = b.dataset.t === type ? 'var(--purple)' : 'rgba(255,255,255,.05)';
+    b.style.color      = b.dataset.t === type ? '#fff' : 'var(--muted2)';
+    b.style.borderColor= b.dataset.t === type ? 'var(--purple)' : 'var(--border)';
+  });
+  document.getElementById('sl-add-modal').dataset.type = type;
+  const needsUrl   = !['text','lecture'].includes(type);
+  const needsNotes = ['text','lecture','pdf'].includes(type);
+  document.getElementById('sl-url-row').style.display   = needsUrl   ? 'block' : 'none';
+  document.getElementById('sl-notes-row').style.display = needsNotes ? 'block' : 'none';
+}
+function SL_confirm() {
+  const type  = document.getElementById('sl-add-modal').dataset.type || 'link';
+  const name  = document.getElementById('sl-name').value.trim();
+  const url   = document.getElementById('sl-url').value.trim();
+  const notes = document.getElementById('sl-notes').value.trim();
+  if (!name) {
+    document.getElementById('sl-name').style.borderColor = 'var(--red)';
+    document.getElementById('sl-name').focus();
+    return;
   }
+  document.getElementById('sl-name').style.borderColor = '';
+  const mat = {
+    id: String(Date.now()),
+    type, name, url, notes,
+    addedAt: new Date().toISOString()
+  };
+  SL_materials.unshift(mat);
+  SL_active.add(mat.id);
+  SL_save();
+  SL_renderList();
+  SL_renderPills();
+  SL_closeModal();
 }
 
-function studyQuickAsk(q) {
-  const ta = document.getElementById('study-msg-input');
-  if (ta) { ta.value = q; StudyLLM.sendMessage(q); }
-}</script>
+// ------- Material List -------
+function SL_renderList() {
+  const el = document.getElementById('sl-mat-list');
+  if (!el) return;
+  if (!SL_materials.length) {
+    el.innerHTML = '<div style="text-align:center;padding:32px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2">No materials yet.<br>Click <strong style="color:var(--muted2)">+ Add Material</strong><br>to get started.</div>';
+    return;
+  }
+  el.innerHTML = SL_materials.map(m => {
+    const meta   = SL_TYPES[m.type] || SL_TYPES.text;
+    const active = SL_active.has(m.id);
+    const preview= (m.url || m.notes || '').slice(0, 55);
+    return `<div class="sl-mat-item ${active ? 'sl-active' : ''}" onclick="SL_toggle('${m.id}')">
+      <div style="font-family:var(--mono);font-size:9px;color:${active?'var(--green)':'var(--muted)'};text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">${meta.icon} ${meta.label}${active?' · ACTIVE':''}</div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:-.01em;line-height:1.3">${SL_esc(m.name)}</div>
+      ${preview ? `<div style="font-family:var(--mono);font-size:10px;color:var(--muted2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${SL_esc(preview)}${preview.length>=55?'…':''}</div>` : ''}
+      <button onclick="event.stopPropagation();SL_delete('${m.id}')" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 5px;border-radius:4px" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+    </div>`;
+  }).join('');
+}
+function SL_toggle(id) {
+  if (SL_active.has(id)) SL_active.delete(id);
+  else SL_active.add(id);
+  SL_renderList();
+  SL_renderPills();
+}
+function SL_delete(id) {
+  SL_materials = SL_materials.filter(m => m.id !== id);
+  SL_active.delete(id);
+  SL_save();
+  SL_renderList();
+  SL_renderPills();
+}
+
+// ------- Context Pills -------
+function SL_renderPills() {
+  const el = document.getElementById('sl-pills');
+  if (!el) return;
+  const active = SL_materials.filter(m => SL_active.has(m.id));
+  el.innerHTML = active.map(m =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px;background:rgba(57,255,138,.1);border:1px solid rgba(57,255,138,.25);color:var(--green)">
+      ${SL_TYPES[m.type]?.icon||'📎'} ${SL_esc(m.name.slice(0,18))}${m.name.length>18?'…':''}
+      <span onclick="SL_toggle('${m.id}')" style="cursor:pointer;opacity:.7;font-size:11px" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">✕</span>
+    </span>`
+  ).join('');
+}
+
+// ------- Chat -------
+function SL_esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function SL_md(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`(.+?)`/g,'<code style="background:rgba(124,92,252,.18);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--purple-b)">$1</code>')
+    .replace(/\n\n/g,'</p><p style="margin:6px 0">')
+    .replace(/\n/g,'<br>')
+    .replace(/^/,'<p style="margin:0">').replace(/$/,'</p>');
+}
+function SL_time() {
+  return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+function SL_scrollChat() {
+  const c = document.getElementById('sl-chat'); if(c) c.scrollTop = c.scrollHeight;
+}
+function SL_addMsg(role, html) {
+  const c = document.getElementById('sl-chat'); if(!c) return;
+  const isAI = role === 'ai';
+  const d = document.createElement('div');
+  d.style.cssText = `display:flex;gap:10px;animation:fade-up .3s ease;${isAI?'':'flex-direction:row-reverse'}`;
+  d.innerHTML = `
+    <div style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:${isAI?'linear-gradient(135deg,var(--purple),#4fc3f7)':'linear-gradient(135deg,var(--green),#4fc3f7)'}">
+      ${isAI?'🤖':'👤'}
+    </div>
+    <div style="max-width:76%">
+      <div style="padding:11px 15px;border-radius:13px;font-family:var(--mono);font-size:12.5px;line-height:1.8;
+        ${isAI
+          ? 'background:var(--card2);border:1px solid var(--border);border-top-left-radius:3px'
+          : 'background:rgba(57,255,138,.1);border:1px solid rgba(57,255,138,.22);border-top-right-radius:3px;color:var(--text)'}">
+        ${html}
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;${isAI?'':'text-align:right'}">${SL_time()}</div>
+    </div>`;
+  c.appendChild(d);
+  SL_scrollChat();
+  return d;
+}
+function SL_showTyping() {
+  const c = document.getElementById('sl-chat'); if(!c) return;
+  const d = document.createElement('div');
+  d.id = 'sl-typing';
+  d.style.cssText = 'display:flex;gap:10px;animation:fade-up .3s ease';
+  d.innerHTML = `
+    <div style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:linear-gradient(135deg,var(--purple),#4fc3f7)">🤖</div>
+    <div style="display:flex;align-items:center;gap:5px;padding:13px 16px;background:var(--card2);border:1px solid var(--border);border-radius:13px;border-top-left-radius:3px">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--purple-b);animation:typing-dot 1.2s ease infinite"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--purple-b);animation:typing-dot 1.2s ease .2s infinite"></span>
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--purple-b);animation:typing-dot 1.2s ease .4s infinite"></span>
+    </div>`;
+  c.appendChild(d);
+  SL_scrollChat();
+}
+function SL_hideTyping() {
+  const el = document.getElementById('sl-typing');
+  if (el) el.remove();
+}
+
+function SL_buildSystem() {
+  const active = SL_materials.filter(m => SL_active.has(m.id));
+  let sys = `You are StudyBot, an expert AI learning assistant inside GapSync — an AI Career Intelligence platform for Indian students.
+Help students understand materials, summarize content, answer questions, create quizzes, and build learning paths. Be concise, clear, and use **bold** for key terms.`;
+  if (active.length) {
+    sys += '\n\n## Student\'s Active Study Materials:\n';
+    active.forEach((m,i) => {
+      sys += `\n### ${i+1}. ${m.name} (${SL_TYPES[m.type]?.label||m.type})\n`;
+      if (m.url)   sys += `URL: ${m.url}\n`;
+      if (m.notes) sys += `Notes: ${m.notes}\n`;
+    });
+    sys += '\nAnswer questions based on these materials.';
+  }
+  return sys;
+}
+
+async function SL_send() {
+  const ta = document.getElementById('sl-input');
+  const text = ta ? ta.value.trim() : '';
+  if (!text || SL_loading) return;
+  SL_loading = true;
+
+  // Hide welcome
+  const w = document.getElementById('sl-welcome');
+  if (w) w.style.display = 'none';
+
+  // Show user message
+  SL_addMsg('user', SL_md(text));
+  SL_messages.push({ role:'user', content: text });
+  if (ta) { ta.value = ''; ta.style.height = 'auto'; }
+
+  const btn = document.getElementById('sl-send-btn');
+  if (btn) btn.disabled = true;
+  SL_showTyping();
+
+  // Check API key
+  const apiKey = localStorage.getItem('sl_groq_key') || '';
+  if (!apiKey) {
+    SL_hideTyping();
+    SL_showKeyPrompt(text);
+    SL_loading = false;
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 1024,
+        messages: [
+          { role: 'system', content: SL_buildSystem() },
+          ...SL_messages.slice(-12)
+        ]
+      })
+    });
+
+    SL_hideTyping();
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({}));
+      if (res.status === 401) {
+        localStorage.removeItem('sl_groq_key');
+        SL_addMsg('ai', '🔑 <strong>Invalid API key.</strong> Key cleared — send a message again to re-enter it.');
+      } else {
+        SL_addMsg('ai', `⚠️ API error ${res.status}: ${SL_esc(err.error?.message || 'Unknown error')}`);
+      }
+    } else {
+      const data  = await res.json();
+      const reply = data.choices?.[0]?.message?.content || 'No response received. Please try again.';
+      SL_addMsg('ai', SL_md(reply));
+      SL_messages.push({ role:'assistant', content: reply });
+    }
+  } catch(e) {
+    SL_hideTyping();
+    SL_addMsg('ai', '⚠️ <strong>Network error.</strong> Could not reach Groq API. Check your internet connection and try again.<br><small style="color:var(--muted)">' + SL_esc(e.message) + '</small>');
+  }
+
+  SL_loading = false;
+  if (btn) btn.disabled = false;
+}
+
+function SL_showKeyPrompt(pendingMsg) {
+  const safe = pendingMsg.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');
+  const pid  = 'kp' + Date.now();
+  const d    = document.createElement('div');
+  d.style.cssText = 'display:flex;gap:10px;animation:fade-up .3s ease';
+  d.id = pid;
+  d.innerHTML = `
+    <div style="width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:linear-gradient(135deg,var(--purple),#4fc3f7)">🤖</div>
+    <div style="max-width:82%">
+      <div style="padding:16px;border-radius:13px;border-top-left-radius:3px;background:rgba(57,255,138,.07);border:1px solid rgba(57,255,138,.3);font-family:var(--mono);font-size:12px;line-height:1.8">
+        <p style="margin:0 0 8px"><strong>🔑 Groq API Key Required</strong></p>
+        <p style="margin:0 0 10px;color:var(--muted2)">StudyBot uses <strong style="color:var(--green)">Groq (100% Free)</strong> — powered by LLaMA 3.3 70B, same model as GapSync.</p>
+        <div style="background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;color:var(--amber);font-size:11px;line-height:1.9">
+          📋 <strong>Get your FREE key:</strong><br>
+          1. Go to <strong>console.groq.com</strong> → Sign up free<br>
+          2. Click <strong>API Keys</strong> → <strong>Create API Key</strong><br>
+          3. Copy the key (starts with <code style="background:rgba(255,255,255,.08);padding:1px 5px;border-radius:3px">gsk_</code>)<br>
+          4. Paste below and click Save
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="password" id="sl-key-inp-${pid}" placeholder="gsk_xxxxxxxxxxxxxxxx"
+            style="flex:1;min-width:180px;background:rgba(255,255,255,.06);border:1px solid rgba(57,255,138,.4);border-radius:8px;padding:9px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none"
+            onkeydown="if(event.key==='Enter')SL_saveKey('${pid}','${safe}')">
+          <button onclick="SL_saveKey('${pid}','${safe}')"
+            style="background:linear-gradient(135deg,#1a8f52,var(--green));border:none;color:#06120d;border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">
+            Save &amp; Send →
+          </button>
+        </div>
+        <p style="margin:8px 0 0;font-size:10px;color:var(--muted)">🔒 Saved only in your browser's localStorage. Never sent anywhere except the Groq API.</p>
+      </div>
+    </div>`;
+  const c = document.getElementById('sl-chat');
+  if (c) { c.appendChild(d); SL_scrollChat(); }
+  setTimeout(() => document.getElementById('sl-key-inp-'+pid)?.focus(), 100);
+}
+
+function SL_saveKey(pid, pendingMsg) {
+  const inp = document.getElementById('sl-key-inp-' + pid);
+  const key = inp?.value?.trim() || '';
+  if (!key.startsWith('gsk_')) {
+    if (inp) { inp.style.borderColor='var(--red)'; inp.placeholder='Must start with gsk_…'; }
+    return;
+  }
+  localStorage.setItem('sl_groq_key', key);
+  const el = document.getElementById(pid);
+  if (el) el.remove();
+  SL_addMsg('ai', '✅ <strong>Groq key saved!</strong> Sending your message now…');
+  setTimeout(() => {
+    const ta = document.getElementById('sl-input');
+    if (ta) ta.value = pendingMsg;
+    SL_send();
+  }, 500);
+}
+
+function SL_quickAsk(q) {
+  const ta = document.getElementById('sl-input');
+  if (ta) ta.value = q;
+  SL_send();
+}
+
+function SL_keydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); SL_send(); }
+}
+</script>
 
 <!-- ═══════════════════════════════════════════════════════
      STUDY LLM OVERLAY
 ═══════════════════════════════════════════════════════ -->
-<div id="study-overlay">
+<div id="study-overlay" style="display:none;position:fixed;inset:0;background:rgba(7,7,15,.97);z-index:4000;flex-direction:column;backdrop-filter:blur(20px);font-family:var(--font)">
+
   <!-- Top Bar -->
-  <div class="study-topbar">
-    <div class="study-logo">
-      <div class="logo-mark" style="font-size:15px"><div class="logo-dot"></div>StudyBot</div>
-      <span class="study-logo-badge">AI LEARNING ASSISTANT</span>
-    </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(16,16,31,.95);flex-shrink:0">
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-family:var(--mono);font-size:11px;color:var(--muted2)">Powered by Groq · LLaMA 3.3 70B · <span style="color:var(--green)">Free</span></span>
-      <button onclick="if(confirm('Clear saved Groq API key?')){localStorage.removeItem('study_groq_key');alert('Groq key cleared.');}" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted2);cursor:pointer" title="Clear saved Groq API key">🔑 API Key</button>
-      <button class="study-close" onclick="closeStudyLLM()">✕</button>
+      <div class="logo-mark" style="font-size:15px"><div class="logo-dot"></div>StudyBot</div>
+      <span style="font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:3px 10px;border-radius:100px;background:rgba(57,255,138,.12);color:var(--green);border:1px solid rgba(57,255,138,.25)">AI LEARNING ASSISTANT</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted2)">Groq · LLaMA 3.3 70B · <span style="color:var(--green)">Free</span></span>
+      <button onclick="if(confirm('Clear saved Groq key?')){localStorage.removeItem('sl_groq_key');alert('Key cleared.');}"
+        style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted2);cursor:pointer">🔑 Key</button>
+      <button onclick="closeStudyLLM()"
+        style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
   </div>
 
-  <!-- Body -->
-  <div class="study-body">
-    <!-- Sidebar: Materials -->
-    <div class="study-sidebar">
-      <div class="study-sidebar-hdr">
-        <div class="study-sidebar-title">📚 Study Materials</div>
-        <div class="study-sidebar-sub">Add content · Click to activate</div>
-      </div>
+  <!-- Body: Sidebar + Chat -->
+  <div style="display:flex;flex:1;overflow:hidden;min-height:0">
 
-      <!-- Quick add types -->
-      <div style="padding:10px 12px 0;display:flex;flex-wrap:wrap;gap:5px">
-        <button class="study-type-tab" style="font-size:9px;padding:5px 10px" onclick="StudyLLM.openAddMaterial()">+ Add Material</button>
+    <!-- LEFT SIDEBAR -->
+    <div style="width:290px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0;overflow:hidden">
+      <div style="padding:16px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div style="font-size:13px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px">📚 Study Materials</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted2)">Add content · Click to activate for AI context</div>
       </div>
-
-      <div class="study-materials-list" id="study-mat-list">
-        <div style="text-align:center;padding:28px 16px;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.8">No materials yet.<br>Add links, videos, or notes<br>to start studying.</div>
+      <div style="padding:10px 12px;flex-shrink:0">
+        <button onclick="SL_openModal()"
+          style="width:100%;padding:9px;border:1px dashed rgba(57,255,138,.4);background:rgba(57,255,138,.05);color:var(--green);border-radius:9px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s"
+          onmouseover="this.style.background='rgba(57,255,138,.12)'" onmouseout="this.style.background='rgba(57,255,138,.05)'">
+          + Add Material
+        </button>
       </div>
-
-      <!-- Sidebar footer tips -->
-      <div style="padding:12px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7">
-        💡 <strong style="color:var(--muted2)">Tip:</strong> Click a material to activate it, then ask StudyBot questions about it. Multiple materials can be active at once.
+      <div id="sl-mat-list" style="flex:1;overflow-y:auto;padding:4px 10px 10px">
+        <div style="text-align:center;padding:32px 12px;font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2">No materials yet.<br>Click <strong style="color:var(--muted2)">+ Add Material</strong><br>to get started.</div>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.7;flex-shrink:0">
+        💡 Click a material to <strong style="color:var(--muted2)">activate</strong> it, then ask questions about it. Multiple can be active at once.
       </div>
     </div>
 
-    <!-- Chat Main -->
-    <div class="study-main">
-      <!-- Chat messages -->
-      <div class="study-chat-area" id="study-chat-msgs">
-        <!-- Welcome screen -->
-        <div class="study-welcome" id="study-welcome-screen">
-          <div class="study-welcome-icon">🧠</div>
-          <div class="study-welcome-title">Your <em>Study Companion</em></div>
-          <div class="study-welcome-sub">
-            Add your study materials on the left — links, YouTube videos, lecture notes, PDFs — then ask me anything. I'll summarize, explain, quiz you, and help you build a learning path.
-          </div>
-          <div class="study-quick-actions">
-            <button class="study-qa" onclick="studyQuickAsk('Summarize all my active materials for me.')">📋 Summarize materials</button>
-            <button class="study-qa" onclick="studyQuickAsk('Create a 5-question quiz based on my active materials.')">🧪 Quiz me</button>
-            <button class="study-qa" onclick="studyQuickAsk('Create a structured learning path for my topic, from beginner to advanced.')">🗺 Learning path</button>
-            <button class="study-qa" onclick="studyQuickAsk('What are the most important concepts I need to understand from my materials?')">🎯 Key concepts</button>
-            <button class="study-qa" onclick="studyQuickAsk('Explain the main topic in simple terms, like I am a complete beginner.')">🌱 Explain simply</button>
-            <button class="study-qa" onclick="studyQuickAsk('What are some real-world applications of what I am studying?')">🌐 Real-world uses</button>
+    <!-- RIGHT: CHAT -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
+
+      <!-- Messages -->
+      <div id="sl-chat" style="flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px">
+        <!-- Welcome -->
+        <div id="sl-welcome" style="margin:auto;text-align:center;max-width:460px;padding:40px 20px">
+          <div style="font-size:48px;margin-bottom:14px;animation:float-icon 4s ease-in-out infinite">🧠</div>
+          <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px">Your <em style="font-family:var(--serif);font-style:italic;font-weight:300;color:var(--green)">Study Companion</em></div>
+          <div style="font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.9;margin-bottom:20px">Add materials on the left, then ask me anything.<br>I'll summarize, explain, quiz you, and build learning paths.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center">
+            <button class="study-qa" onclick="SL_quickAsk('Summarize all my active materials.')">📋 Summarize</button>
+            <button class="study-qa" onclick="SL_quickAsk('Create a 5-question quiz on my active materials.')">🧪 Quiz me</button>
+            <button class="study-qa" onclick="SL_quickAsk('Create a structured learning path from beginner to advanced for my topic.')">🗺 Learning path</button>
+            <button class="study-qa" onclick="SL_quickAsk('What are the key concepts I need to know from my materials?')">🎯 Key concepts</button>
+            <button class="study-qa" onclick="SL_quickAsk('Explain the main topic simply, like I am a complete beginner.')">🌱 Explain simply</button>
+            <button class="study-qa" onclick="SL_quickAsk('What are real-world applications of what I am studying?')">🌐 Real-world uses</button>
           </div>
         </div>
       </div>
 
-      <!-- Input area -->
-      <div class="study-input-area">
-        <div class="study-context-pills" id="study-ctx-pills"></div>
-        <div class="study-input-row">
-          <textarea
-            class="study-textarea"
-            id="study-msg-input"
-            placeholder="Ask anything about your materials… or any learning topic"
-            rows="1"
-            onkeydown="studyInputKeydown(event)"
-            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"
-          ></textarea>
-          <button class="study-send-btn" id="study-send-btn" onclick="studySendFromInput()" title="Send (Enter)">↑</button>
+      <!-- Input -->
+      <div style="padding:14px 20px;border-top:1px solid var(--border);background:rgba(11,11,24,.97);flex-shrink:0">
+        <div id="sl-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:0"></div>
+        <div style="display:flex;gap:9px;align-items:flex-end">
+          <textarea id="sl-input" rows="1" placeholder="Ask anything… or pick a quick action above"
+            style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:11px;padding:11px 14px;font-family:var(--mono);font-size:12.5px;color:var(--text);outline:none;resize:none;min-height:46px;max-height:130px;line-height:1.6;transition:border-color .2s"
+            onkeydown="SL_keydown(event)"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
+            onfocus="this.style.borderColor='rgba(57,255,138,.5)'"
+            onblur="this.style.borderColor='var(--border)'"></textarea>
+          <button id="sl-send-btn" onclick="SL_send()"
+            style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--purple),var(--purple-b));border:none;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;transition:all .2s"
+            onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform=''">↑</button>
         </div>
-        <div class="study-hint">Press Enter to send · Shift+Enter for new line · Activate materials from the sidebar for context-aware answers</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;margin-top:7px">Enter to send · Shift+Enter for new line</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Add Material Modal -->
-<div class="study-modal-ov" id="study-add-modal" data-type="link" onclick="if(event.target===this)StudyLLM.closeAddMaterial()">
-  <div class="study-modal-box">
-    <div class="study-modal-hdr">
-      <div class="study-modal-title">Add Study Material</div>
-      <button class="study-close" onclick="StudyLLM.closeAddMaterial()">✕</button>
+<!-- ADD MATERIAL MODAL -->
+<div id="sl-add-modal" style="display:none;position:fixed;inset:0;background:rgba(7,7,15,.88);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(10px)"
+  onclick="if(event.target===this)SL_closeModal()">
+  <div style="background:var(--card);border:1px solid var(--border-hi);border-radius:18px;width:480px;max-width:92vw;overflow:hidden">
+    <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:15px;font-weight:800;letter-spacing:-.03em">Add Study Material</div>
+      <button onclick="SL_closeModal()" style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted2);cursor:pointer;font-size:14px">✕</button>
     </div>
-    <div class="study-modal-body">
-      <!-- Type tabs -->
-      <div class="study-type-tabs" id="study-add-type-tabs">
-        <button class="study-type-tab active" data-type="link" onclick="StudyLLM.switchAddType('link')">🔗 Link</button>
-        <button class="study-type-tab" data-type="youtube" onclick="StudyLLM.switchAddType('youtube')">▶️ YouTube</button>
-        <button class="study-type-tab" data-type="lecture" onclick="StudyLLM.switchAddType('lecture')">🎓 Lecture</button>
-        <button class="study-type-tab" data-type="pdf" onclick="StudyLLM.switchAddType('pdf')">📄 PDF / Doc</button>
-        <button class="study-type-tab" data-type="text" onclick="StudyLLM.switchAddType('text')">📝 Notes</button>
+    <div style="padding:20px 22px 22px">
+      <!-- Type buttons -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="sl-type-btn" data-t="link"    onclick="SL_switchType('link')"    style="font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--purple);background:var(--purple);color:#fff;cursor:pointer;transition:all .15s">🔗 Link</button>
+        <button class="sl-type-btn" data-t="youtube" onclick="SL_switchType('youtube')" style="font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted2);cursor:pointer;transition:all .15s">▶️ YouTube</button>
+        <button class="sl-type-btn" data-t="lecture" onclick="SL_switchType('lecture')" style="font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted2);cursor:pointer;transition:all .15s">🎓 Lecture</button>
+        <button class="sl-type-btn" data-t="pdf"     onclick="SL_switchType('pdf')"     style="font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted2);cursor:pointer;transition:all .15s">📄 PDF/Doc</button>
+        <button class="sl-type-btn" data-t="text"    onclick="SL_switchType('text')"    style="font-family:var(--mono);font-size:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--muted2);cursor:pointer;transition:all .15s">📝 Notes</button>
       </div>
-
       <!-- Name -->
-      <div class="field">
-        <label>Material Name</label>
-        <input type="text" id="study-add-name" class="finput" placeholder="e.g. React Hooks Tutorial, OS Lecture 3…">
+      <div style="margin-bottom:13px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Material Name *</div>
+        <input id="sl-name" type="text" placeholder="e.g. OS Lecture 4 — CPU Scheduling"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-family:var(--mono);font-size:12.5px;color:var(--text);outline:none;box-sizing:border-box;transition:border-color .2s"
+          onfocus="this.style.borderColor='rgba(124,92,252,.5)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')document.getElementById('sl-url').focus()">
       </div>
-
-      <!-- URL row -->
-      <div id="study-url-row">
-        <div class="field">
-          <label>URL / Link</label>
-          <input type="url" id="study-add-url" class="finput" placeholder="https://…">
-        </div>
+      <!-- URL -->
+      <div id="sl-url-row" style="margin-bottom:13px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">URL / Link</div>
+        <input id="sl-url" type="url" placeholder="https://…"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-family:var(--mono);font-size:12.5px;color:var(--text);outline:none;box-sizing:border-box;transition:border-color .2s"
+          onfocus="this.style.borderColor='rgba(124,92,252,.5)'" onblur="this.style.borderColor='var(--border)'">
       </div>
-
-      <!-- Content / notes row -->
-      <div id="study-content-row" style="display:none">
-        <div class="field">
-          <label>Content / Notes</label>
-          <textarea id="study-add-content" class="finput" style="min-height:120px;resize:vertical" placeholder="Paste your notes, lecture content, or any text you want to study…"></textarea>
-        </div>
+      <!-- Notes -->
+      <div id="sl-notes-row" style="display:none;margin-bottom:13px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Notes / Content</div>
+        <textarea id="sl-notes" rows="4" placeholder="Paste lecture notes, key points, or any text to study…"
+          style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-family:var(--mono);font-size:12.5px;color:var(--text);outline:none;resize:vertical;box-sizing:border-box;transition:border-color .2s"
+          onfocus="this.style.borderColor='rgba(124,92,252,.5)'" onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
-
-      <div style="display:flex;gap:10px;margin-top:4px">
-        <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="StudyLLM.closeAddMaterial()">Cancel</button>
-        <button class="btn btn-green" style="flex:1;justify-content:center" onclick="StudyLLM.confirmAddMaterial()">✓ Add &amp; Activate</button>
+      <!-- Buttons -->
+      <div style="display:flex;gap:9px">
+        <button onclick="SL_closeModal()" class="btn btn-ghost" style="flex:1;justify-content:center">Cancel</button>
+        <button onclick="SL_confirm()"    class="btn btn-green"  style="flex:1;justify-content:center">✓ Add &amp; Activate</button>
       </div>
     </div>
   </div>
