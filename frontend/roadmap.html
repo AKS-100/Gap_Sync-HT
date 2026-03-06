@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GapSync — Career Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,200;1,9..144,300;1,9..144,400&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#06060e;--bg:#09091a;--surface:#0e0e20;--card:#111126;--card2:#161630;
+  --border:rgba(255,255,255,.06);--border-hi:rgba(255,255,255,.12);--border-glow:rgba(124,92,252,.3);
+  --purple:#7c5cfc;--purple-b:#a080ff;--purple-dim:rgba(124,92,252,.12);--purple-glow:rgba(124,92,252,.25);
+  --green:#39ff8a;--green-dim:rgba(57,255,138,.1);--green-glow:rgba(57,255,138,.2);
+  --amber:#ffb547;--amber-dim:rgba(255,181,71,.1);
+  --red:#ff4f6a;--blue:#4fc3f7;--teal:#2dd4bf;
+  --text:#eeeef5;--muted:#4a4a6a;--muted2:#7878a0;--muted3:#9898b8;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;--serif:'Fraunces',serif;
+  --r:16px;--r-sm:10px;
+}
+html{scroll-behavior:smooth;height:100%}
+body{font-family:var(--font);background:var(--black);color:var(--text);overflow-x:hidden;min-height:100%}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(124,92,252,.35);border-radius:2px}
+button{font-family:inherit;cursor:pointer;border:none}
+a{text-decoration:none;color:inherit}
+
+/* ═══════════════════════════════════════════════════════
+   PAGE TRANSITION SYSTEM
+═══════════════════════════════════════════════════════ */
+#page-transition{
+  position:fixed;inset:0;z-index:9990;pointer-events:none;
+  background:var(--black);
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+  transform:translateY(100%);
+  transition:none;
+}
+#page-transition.enter{transform:translateY(0);transition:transform .55s cubic-bezier(.76,0,.24,1)}
+#page-transition.exit{transform:translateY(-100%);transition:transform .55s cubic-bezier(.76,0,.24,1) .05s}
+#page-transition.gone{transform:translateY(-100%)}
+
+#transition-line{
+  position:fixed;top:0;left:0;right:0;z-index:9995;
+  height:2px;
+  background:linear-gradient(90deg,var(--purple),var(--green),var(--purple));
+  background-size:200% 100%;
+  transform:scaleX(0);transform-origin:left;
+  opacity:0;pointer-events:none;
+  animation:none;
+}
+#transition-line.loading{
+  transform:scaleX(1);opacity:1;
+  animation:line-sweep 1.5s cubic-bezier(.22,1,.36,1) forwards,
+             shimmer 1.5s linear infinite;
+}
+@keyframes line-sweep{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes shimmer{0%{background-position:0% 0%}100%{background-position:200% 0%}}
+
+/* ═══════════════════════════════════════════════════════
+   NOISE OVERLAY
+═══════════════════════════════════════════════════════ */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:2000;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════
+   CUSTOM CURSOR
+═══════════════════════════════════════════════════════ */
+#cur{position:fixed;width:10px;height:10px;border-radius:50%;background:var(--purple);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .15s,height .15s,background .2s}
+#cur-ring{position:fixed;width:32px;height:32px;border-radius:50%;border:1px solid rgba(124,92,252,.35);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLL PROGRESS
+═══════════════════════════════════════════════════════ */
+#scroll-prog{
+  position:fixed;top:0;left:0;height:2px;z-index:9000;width:0%;
+  background:linear-gradient(90deg,var(--purple),var(--green));
+  transition:width .1s;
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAV
+═══════════════════════════════════════════════════════ */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 48px;
+  transition:all .4s;
+}
+#nav.scrolled{
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  background:rgba(6,6,14,.85);
+  border-bottom:1px solid var(--border);
+}
+.nav-logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;letter-spacing:-.02em;cursor:pointer}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green),0 0 24px rgba(57,255,138,.3);animation:pulse-dot 3s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 12px var(--green),0 0 24px rgba(57,255,138,.3)}50%{box-shadow:0 0 20px var(--green),0 0 40px rgba(57,255,138,.5)}}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-pill{font-family:var(--mono);font-size:10px;padding:6px 14px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted3);letter-spacing:.06em}
+.nav-back{font-family:var(--mono);font-size:11px;padding:8px 16px;border-radius:8px;background:transparent;color:var(--muted3);border:1px solid var(--border);transition:all .2s;display:flex;align-items:center;gap:6px}
+.nav-back:hover{color:var(--text);border-color:var(--border-hi);background:rgba(255,255,255,.04)}
+
+/* ═══════════════════════════════════════════════════════
+   ROLE PICKER — initial state
+═══════════════════════════════════════════════════════ */
+#role-picker{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:120px 24px 80px;
+  opacity:0;transform:translateY(24px);
+  transition:opacity .7s ease .3s,transform .7s cubic-bezier(.22,1,.36,1) .3s;
+}
+#role-picker.visible{opacity:1;transform:none}
+
+.picker-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(124,92,252,.18),transparent 70%),
+             radial-gradient(ellipse 40% 40% at 10% 80%,rgba(57,255,138,.07),transparent),
+             radial-gradient(ellipse 35% 35% at 90% 60%,rgba(79,195,247,.05),transparent);
+}
+.picker-grid-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:72px 72px;
+  mask-image:radial-gradient(ellipse 100% 100% at 50% 50%,black 0%,transparent 75%);
+}
+.picker-eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green);margin-bottom:18px;display:flex;align-items:center;gap:12px;
+}
+.picker-eyebrow::before,.picker-eyebrow::after{content:'';width:28px;height:1px;background:currentColor;opacity:.4}
+.picker-h1{font-size:clamp(36px,4.5vw,60px);font-weight:800;letter-spacing:-.04em;line-height:.92;margin-bottom:14px;text-align:center}
+.picker-h1 em{font-family:var(--serif);font-style:italic;font-weight:200;color:var(--purple-b)}
+.picker-sub{font-family:var(--mono);font-size:12px;color:var(--muted2);max-width:420px;text-align:center;line-height:1.85;margin-bottom:52px}
+
+.role-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  width:100%;max-width:900px;margin-bottom:32px;
+}
+@media(max-width:700px){.role-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.role-grid{grid-template-columns:1fr}}
+
+.role-btn{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:22px 20px;cursor:pointer;text-align:left;
+  transition:all .28s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:6px;
+}
+.role-btn::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s}
+.role-btn:hover{transform:translateY(-4px) scale(1.02);border-color:var(--border-glow);box-shadow:0 20px 50px rgba(124,92,252,.15)}
+.role-btn:hover::after{background:rgba(255,255,255,.02)}
+.role-btn:active{transform:translateY(-1px) scale(.99)}
+.rb-icon{font-size:22px;margin-bottom:4px}
+.rb-name{font-size:13px;font-weight:700;letter-spacing:-.02em}
+.rb-cat{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2)}
+
+/* ═══════════════════════════════════════════════════════
+   ROADMAP VIEW — hidden until role chosen
+═══════════════════════════════════════════════════════ */
+#roadmap-view{
+  display:none;opacity:0;
+}
+#roadmap-view.visible{display:block;opacity:1}
+
+/* ── HERO BANNER ── */
+.rm-hero{
+  min-height:100vh;display:flex;align-items:flex-end;justify-content:flex-start;
+  position:relative;overflow:hidden;padding:0 0 72px;
+}
+.rm-hero-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 30% 30%,rgba(124,92,252,.2),transparent 70%),
+             radial-gradient(ellipse 50% 50% at 80% 70%,rgba(57,255,138,.08),transparent 60%),
+             radial-gradient(ellipse 40% 40% at 60% 10%,rgba(79,195,247,.06),transparent);
+}
+.rm-hero-grid{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:80px 80px;
+  mask-image:radial-gradient(ellipse 100% 100% at 40% 50%,black 20%,transparent 75%);
+}
+.rm-hero-orb1{position:absolute;width:700px;height:700px;border-radius:50%;background:var(--purple);filter:blur(160px);opacity:.08;top:-200px;left:-200px;animation:orb1 14s ease-in-out infinite}
+.rm-hero-orb2{position:absolute;width:500px;height:500px;border-radius:50%;background:var(--green);filter:blur(140px);opacity:.06;bottom:-100px;right:0;animation:orb2 16s ease-in-out infinite}
+@keyframes orb1{0%,100%{transform:translate(0,0)}50%{transform:translate(60px,40px)}}
+@keyframes orb2{0%,100%{transform:translate(0,0)}50%{transform:translate(-50px,-30px)}}
+
+.rm-hero-content{position:relative;z-index:5;padding:0 64px;max-width:1100px;width:100%}
+.rm-hero-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--green);margin-bottom:24px;display:flex;align-items:center;gap:10px;
+  opacity:0;transform:translateY(20px);transition:all .6s ease .1s;
+}
+.rm-hero-tag.in{opacity:1;transform:none}
+.rm-hero-tag::before{content:'';width:24px;height:1px;background:var(--green);opacity:.5}
+.rm-hero-h1{
+  font-size:clamp(44px,5vw,72px);font-weight:800;letter-spacing:-.04em;line-height:.9;
+  margin-bottom:22px;
+  opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.22,1,.36,1) .2s;
+}
+.rm-hero-h1.in{opacity:1;transform:none}
+.rm-hero-h1 em{font-family:var(--serif);font-style:italic;font-weight:200;color:var(--purple-b)}
+.rm-hero-h1 strong{color:var(--green)}
+
+.rm-hero-meta{
+  display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;
+  opacity:0;transform:translateY(20px);transition:all .6s ease .35s;
+}
+.rm-hero-meta.in{opacity:1;transform:none}
+.rm-meta-chip{
+  font-family:var(--mono);font-size:11px;padding:8px 16px;border-radius:100px;
+  display:flex;align-items:center;gap:7px;
+}
+.mc-weeks{background:rgba(124,92,252,.12);border:1px solid rgba(124,92,252,.25);color:var(--purple-b)}
+.mc-phase{background:rgba(57,255,138,.08);border:1px solid rgba(57,255,138,.2);color:var(--green)}
+.mc-score{background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.2);color:var(--amber)}
+
+.rm-hero-sub{
+  font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.85;
+  max-width:520px;margin-bottom:36px;
+  opacity:0;transition:opacity .6s ease .45s;
+}
+.rm-hero-sub.in{opacity:1}
+
+.rm-hero-btns{
+  display:flex;gap:12px;flex-wrap:wrap;
+  opacity:0;transform:translateY(16px);transition:all .5s ease .55s;
+}
+.rm-hero-btns.in{opacity:1;transform:none}
+.btn-start{
+  background:var(--purple);color:#fff;padding:14px 28px;border-radius:12px;font-size:13px;font-weight:700;
+  letter-spacing:.03em;display:inline-flex;align-items:center;gap:8px;
+  transition:all .25s;position:relative;overflow:hidden;
+}
+.btn-start::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:.2s}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(124,92,252,.45);background:var(--purple-b)}
+.btn-start:hover::after{background:rgba(255,255,255,.06)}
+.btn-overview{
+  background:transparent;color:var(--text);padding:14px 24px;border-radius:12px;font-size:13px;font-weight:600;
+  border:1px solid var(--border);transition:all .2s;
+}
+.btn-overview:hover{border-color:var(--border-hi);background:rgba(255,255,255,.04)}
+
+/* ── PROGRESS BAR (sticky) ── */
+.rm-sticky-bar{
+  position:sticky;top:0;z-index:200;
+  background:rgba(6,6,14,.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  padding:0 64px;
+  display:flex;align-items:center;gap:20px;height:56px;
+}
+.rsb-role{font-family:var(--mono);font-size:11px;color:var(--muted2);white-space:nowrap}
+.rsb-phases{display:flex;gap:0;flex:1;overflow:hidden}
+.rsb-phase{
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  padding:0 16px;height:56px;display:flex;align-items:center;gap:6px;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .2s;white-space:nowrap;position:relative;top:1px;
+}
+.rsb-phase:hover{color:var(--muted3)}
+.rsb-phase.active{color:var(--purple-b);border-bottom-color:var(--purple)}
+.rsb-phase .ph-num{
+  width:18px;height:18px;border-radius:50%;background:rgba(124,92,252,.15);
+  color:var(--purple-b);font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+.rsb-phase.active .ph-num{background:var(--purple);color:#fff}
+.rsb-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.rsb-prog-wrap{display:flex;align-items:center;gap:8px}
+.rsb-prog-label{font-family:var(--mono);font-size:10px;color:var(--muted2);white-space:nowrap}
+.rsb-prog-bar{width:90px;height:4px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden}
+.rsb-prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--green));border-radius:100px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+
+/* ═══════════════════════════════════════════════════════
+   ROADMAP CONTENT WRAPPER
+═══════════════════════════════════════════════════════ */
+.rm-content{max-width:1100px;margin:0 auto;padding:0 64px 120px}
+@media(max-width:768px){.rm-content{padding:0 24px 80px}.rm-hero-content{padding:0 24px}.rm-sticky-bar{padding:0 24px}}
+
+/* ── PHASE SECTION ── */
+.phase-section{padding-top:80px;margin-bottom:40px}
+.phase-header{
+  display:flex;align-items:flex-start;gap:24px;margin-bottom:48px;padding-bottom:28px;
+  border-bottom:1px solid var(--border);
+}
+.phase-num-badge{
+  width:56px;height:56px;border-radius:16px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;letter-spacing:-.03em;
+  border:1px solid;transition:all .3s;
+}
+.pn-1{background:rgba(124,92,252,.12);border-color:rgba(124,92,252,.3);color:var(--purple-b)}
+.pn-2{background:rgba(57,255,138,.08);border-color:rgba(57,255,138,.25);color:var(--green)}
+.pn-3{background:rgba(79,195,247,.08);border-color:rgba(79,195,247,.25);color:var(--blue)}
+.phase-meta{flex:1}
+.phase-label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px}
+.phase-title{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1;margin-bottom:10px}
+.phase-goal{font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.8;max-width:560px}
+.phase-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.pstat{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:100px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted3)}
+
+/* ── WEEK TIMELINE ── */
+.week-timeline{display:flex;flex-direction:column;gap:0;position:relative}
+.week-timeline::before{
+  content:'';position:absolute;left:27px;top:32px;bottom:40px;width:1px;
+  background:linear-gradient(180deg,var(--purple) 0%,rgba(124,92,252,.3) 60%,transparent 100%);
+}
+
+.week-entry{display:flex;gap:24px;position:relative;margin-bottom:32px}
+.week-entry:last-child{margin-bottom:0}
+
+.we-left{flex-shrink:0;width:56px;display:flex;flex-direction:column;align-items:center;gap:0}
+.we-node{
+  width:16px;height:16px;border-radius:50%;flex-shrink:0;z-index:1;margin-top:8px;
+  border:2px solid;transition:all .35s;
+  box-shadow:none;
+}
+.wn-normal{background:var(--card2);border-color:rgba(124,92,252,.3)}
+.wn-milestone{background:var(--purple);border-color:var(--purple-b);box-shadow:0 0 16px rgba(124,92,252,.6),0 0 32px rgba(124,92,252,.3)}
+.wn-checkpoint{background:var(--green);border-color:var(--green);box-shadow:0 0 14px rgba(57,255,138,.5),0 0 28px rgba(57,255,138,.25)}
+.we-week-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:.06em;text-align:center;margin-top:4px;writing-mode:horizontal-tb;white-space:nowrap}
+
+.we-card{
+  flex:1;background:var(--card);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;transition:all .3s cubic-bezier(.22,1,.36,1);
+  opacity:0;transform:translateX(20px);
+}
+.we-card.visible{opacity:1;transform:none}
+.we-card:hover{border-color:var(--border-hi);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+
+.we-card.milestone-card{border-color:rgba(124,92,252,.25);background:linear-gradient(135deg,rgba(124,92,252,.06),var(--card))}
+.we-card.checkpoint-card{border-color:rgba(57,255,138,.2);background:linear-gradient(135deg,rgba(57,255,138,.04),var(--card))}
+
+.we-card-top{height:3px}
+.wct-normal{background:linear-gradient(90deg,rgba(124,92,252,.4),rgba(124,92,252,.1))}
+.wct-milestone{background:linear-gradient(90deg,var(--purple),var(--purple-b))}
+.wct-checkpoint{background:linear-gradient(90deg,var(--green),rgba(57,255,138,.3))}
+
+.we-card-body{padding:22px 26px 26px}
+
+.we-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  padding:4px 10px;border-radius:100px;margin-bottom:10px;
+}
+.wb-milestone{background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.3)}
+.wb-checkpoint{background:var(--green-dim);color:var(--green);border:1px solid rgba(57,255,138,.25)}
+
+.we-title{font-size:17px;font-weight:700;letter-spacing:-.03em;margin-bottom:8px;line-height:1.2}
+.we-desc{font-family:var(--mono);font-size:11.5px;color:var(--muted2);line-height:1.85;margin-bottom:18px}
+
+/* Tasks */
+.we-tasks-label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.we-tasks{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.we-tasks li{
+  font-family:var(--mono);font-size:11.5px;color:var(--muted3);
+  display:flex;align-items:flex-start;gap:10px;line-height:1.65;
+  padding:10px 14px;background:rgba(255,255,255,.025);border-radius:8px;
+  border:1px solid var(--border);transition:all .2s;
+}
+.we-tasks li:hover{background:rgba(255,255,255,.04);border-color:var(--border-hi);color:var(--text)}
+.task-dot{width:5px;height:5px;border-radius:50%;background:var(--purple-b);flex-shrink:0;margin-top:6px}
+.task-check{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:6px}
+
+/* Resources */
+.we-resources-label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.we-resources{display:flex;flex-direction:column;gap:10px}
+.resource-card{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;align-items:flex-start;gap:12px;
+  transition:all .25s;cursor:default;
+  position:relative;overflow:hidden;
+}
+.resource-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;transition:background .25s}
+.resource-card:hover{background:rgba(255,255,255,.05);border-color:var(--border-hi)}
+.rc-type-free::before{background:var(--green)}
+.rc-type-paid::before{background:var(--amber)}
+.rc-type-tool::before{background:var(--blue)}
+.rc-type-read::before{background:var(--purple-b)}
+.rc-type-practice::before{background:var(--teal)}
+
+.res-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.res-body{flex:1}
+.res-name{font-size:13px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px}
+.res-why{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.7;margin-bottom:8px}
+.res-how{
+  font-family:var(--mono);font-size:10.5px;color:var(--muted3);line-height:1.75;
+  padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid rgba(124,92,252,.3);
+}
+.res-how strong{color:var(--purple-b);font-weight:500}
+.res-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.res-tag{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:100px}
+.rt-free{background:rgba(57,255,138,.08);border:1px solid rgba(57,255,138,.2);color:var(--green)}
+.rt-paid{background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.2);color:var(--amber)}
+.rt-tool{background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);color:var(--blue)}
+.rt-read{background:var(--purple-dim);border:1px solid rgba(124,92,252,.25);color:var(--purple-b)}
+.rt-practice{background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);color:var(--teal)}
+
+/* Skills earned block */
+.skills-earned-block{
+  margin-top:18px;padding:14px 16px;
+  background:rgba(255,181,71,.04);border:1px solid rgba(255,181,71,.15);border-radius:10px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.se-label{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:7px}
+.se-skills{display:flex;flex-wrap:wrap;gap:5px}
+.se-skill{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:100px;background:rgba(255,181,71,.1);border:1px solid rgba(255,181,71,.2);color:var(--amber)}
+
+/* ═══════════════════════════════════════════════════════
+   ALUMNI GUIDANCE SECTION
+═══════════════════════════════════════════════════════ */
+.guidance-section{
+  margin-top:72px;padding-top:56px;border-top:1px solid var(--border);
+}
+.gs-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px;flex-wrap:wrap;gap:16px}
+.gs-title-area{}
+.gs-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--purple-b);margin-bottom:8px}
+.gs-title{font-size:26px;font-weight:800;letter-spacing:-.04em;margin-bottom:6px}
+.gs-sub{font-family:var(--mono);font-size:11.5px;color:var(--muted2);line-height:1.8;max-width:480px}
+.gs-add-btn{
+  background:var(--purple-dim);color:var(--purple-b);border:1px solid rgba(124,92,252,.3);
+  padding:10px 20px;border-radius:10px;font-size:12px;font-weight:600;
+  display:flex;align-items:center;gap:7px;flex-shrink:0;transition:all .2s;
+}
+.gs-add-btn:hover{background:rgba(124,92,252,.2);border-color:rgba(124,92,252,.5);transform:translateY(-1px)}
+
+.guidance-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.guidance-card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:22px;position:relative;overflow:hidden;transition:all .3s;
+}
+.guidance-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--purple),rgba(124,92,252,.1),transparent);
+}
+.guidance-card:hover{border-color:var(--border-hi);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.3)}
+.gc-quote{font-size:40px;line-height:1;color:rgba(124,92,252,.2);margin-bottom:6px;font-family:Georgia,serif}
+.gc-advice{font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.85;margin-bottom:18px;font-style:italic}
+.gc-person{display:flex;align-items:center;gap:12px}
+.gc-avatar{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;
+  background:linear-gradient(135deg,var(--purple),var(--purple-b));
+}
+.gc-name{font-size:13px;font-weight:700;letter-spacing:-.02em}
+.gc-role{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.gc-exp{font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:2px}
+
+.guidance-empty{
+  grid-column:1/-1;text-align:center;padding:48px;
+  background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:14px;
+}
+.ge-icon{font-size:32px;margin-bottom:12px}
+.ge-text{font-family:var(--mono);font-size:12px;color:var(--muted2);line-height:1.85}
+.ge-cta{
+  display:inline-flex;align-items:center;gap:7px;margin-top:14px;
+  font-family:var(--mono);font-size:11px;color:var(--purple-b);
+  padding:8px 18px;border-radius:8px;border:1px solid rgba(124,92,252,.3);
+  background:var(--purple-dim);cursor:pointer;transition:all .2s;
+}
+.ge-cta:hover{background:rgba(124,92,252,.2);border-color:rgba(124,92,252,.5)}
+
+/* ═══════════════════════════════════════════════════════
+   GUIDANCE MODAL
+═══════════════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:800;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(20px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  width:100%;max-width:460px;background:var(--card);border:1px solid var(--border-hi);
+  border-radius:22px;position:relative;overflow:hidden;
+  animation:modal-in .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes modal-in{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+.modal-stripe{height:3px;background:linear-gradient(90deg,var(--purple),var(--purple-b))}
+.modal-inner{padding:32px}
+.modal-title{font-size:20px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+.modal-sub{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.7;margin-bottom:24px}
+.modal-close-btn{
+  position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:8px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  color:var(--muted2);font-size:12px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;
+}
+.modal-close-btn:hover{background:rgba(255,79,106,.1);color:var(--red);border-color:rgba(255,79,106,.3)}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2)}
+.field input,.field textarea,.field select{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;
+  padding:11px 14px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;
+  transition:all .2s;width:100%;
+}
+.field input:focus,.field textarea:focus{border-color:rgba(124,92,252,.4);background:rgba(124,92,252,.05);box-shadow:0 0 0 3px rgba(124,92,252,.08)}
+.field textarea{resize:vertical;min-height:80px}
+.modal-submit{
+  width:100%;padding:13px;border-radius:10px;background:var(--purple);color:#fff;
+  font-size:13px;font-weight:700;transition:all .2s;margin-top:4px;
+}
+.modal-submit:hover{background:var(--purple-b);transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,.4)}
+.modal-status{font-family:var(--mono);font-size:11px;text-align:center;margin-top:10px;padding:8px;border-radius:7px;display:none}
+.ms-ok{background:rgba(57,255,138,.07);color:var(--green);border:1px solid rgba(57,255,138,.15)}
+.ms-err{background:rgba(255,79,106,.07);color:var(--red);border:1px solid rgba(255,79,106,.15)}
+
+/* ═══════════════════════════════════════════════════════
+   CAREER COMPASS (alternatives section)
+═══════════════════════════════════════════════════════ */
+.compass-section{
+  margin-top:80px;padding-top:56px;border-top:1px solid var(--border);
+}
+.compass-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:28px}
+.compass-card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;
+  transition:all .28s;display:flex;flex-direction:column;gap:10px;
+}
+.compass-card:hover{border-color:var(--border-hi);transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.cc-match-row{display:flex;align-items:center;gap:8px}
+.cc-pct{font-family:var(--mono);font-size:11px;color:var(--green);font-weight:600;flex-shrink:0;width:36px}
+.cc-bar{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden}
+.cc-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--green));border-radius:100px}
+.cc-title{font-size:14px;font-weight:700;letter-spacing:-.02em}
+.cc-sal{font-family:var(--mono);font-size:10px;color:var(--amber)}
+.cc-desc{font-family:var(--mono);font-size:11px;color:var(--muted2);line-height:1.65}
+
+/* ═══════════════════════════════════════════════════════
+   REVEAL ANIMATIONS
+═══════════════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1)}
+.reveal.left{transform:translateX(-30px)}
+.reveal.right{transform:translateX(30px)}
+.reveal.visible{opacity:1;transform:none}
+.rd1{transition-delay:.08s}.rd2{transition-delay:.16s}.rd3{transition-delay:.24s}.rd4{transition-delay:.32s}
+
+/* Floating orbs in role picker */
+.orb-float{position:absolute;border-radius:50%;pointer-events:none;filter:blur(100px);opacity:.1}
+.of1{width:500px;height:500px;background:var(--purple);top:-100px;right:-100px;animation:orb1 12s ease-in-out infinite}
+.of2{width:400px;height:400px;background:var(--green);bottom:-80px;left:-80px;animation:orb2 14s ease-in-out infinite}
+
+/* ═══════════════════════════════════════════════════════
+   SECTION DIVIDERS
+═══════════════════════════════════════════════════════ */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:60px 0}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  .rm-sticky-bar{padding:0 16px;gap:10px}
+  .rsb-role{display:none}
+  .rsb-phase{padding:0 10px;font-size:9px}
+  .rm-hero-content{padding:0 20px}
+  .rm-content{padding:0 20px 80px}
+  .phase-header{flex-direction:column;gap:12px}
+  .week-entry{gap:14px}
+  .week-timeline::before{left:19px}
+  .we-left{width:40px}
+  .resource-card{flex-direction:column}
+  .role-grid{grid-template-columns:1fr 1fr}
+  #nav{padding:14px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- Page transition overlay -->
+<div id="page-transition"></div>
+<div id="transition-line"></div>
+
+<!-- Cursor -->
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<!-- Scroll progress -->
+<div id="scroll-prog"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo" onclick="backToRolePicker()">
+    <div class="logo-dot"></div>
+    GapSync
+  </div>
+  <div class="nav-right">
+    <div class="nav-pill" id="nav-role-label">Career Roadmap</div>
+    <button class="nav-back" onclick="goBack()">
+      ← Back to Dashboard
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════
+     ROLE PICKER (initial screen)
+════════════════════════════════ -->
+<div id="role-picker">
+  <div class="picker-bg"></div>
+  <div class="picker-grid-bg"></div>
+  <div class="orb-float of1"></div>
+  <div class="orb-float of2"></div>
+
+  <div style="position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;width:100%">
+    <div class="picker-eyebrow">Choose Your Destination</div>
+    <h1 class="picker-h1">Which career<br><em>path are you on?</em></h1>
+    <p class="picker-sub">Select your target role to unlock your personalised week-by-week roadmap — with precise resources, usage guides, and alumni wisdom.</p>
+
+    <div class="role-grid">
+      <button class="role-btn" onclick="loadRoadmap('Full Stack Developer')"><div class="rb-icon">⚡</div><div class="rb-name">Full Stack Developer</div><div class="rb-cat">Software Engineering · 24 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Frontend Developer')"><div class="rb-icon">🎨</div><div class="rb-name">Frontend Developer</div><div class="rb-cat">Software Engineering · 16 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Backend Developer')"><div class="rb-icon">⚙️</div><div class="rb-name">Backend Developer</div><div class="rb-cat">Software Engineering · 20 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Data Scientist')"><div class="rb-icon">📊</div><div class="rb-name">Data Scientist</div><div class="rb-cat">Data · 32 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('ML Engineer')"><div class="rb-icon">🤖</div><div class="rb-name">ML Engineer</div><div class="rb-cat">AI · 36 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('DevOps Engineer')"><div class="rb-icon">🛠</div><div class="rb-name">DevOps Engineer</div><div class="rb-cat">Infrastructure · 28 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Data Analyst')"><div class="rb-icon">🔍</div><div class="rb-name">Data Analyst</div><div class="rb-cat">Data · 20 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Cloud Engineer')"><div class="rb-icon">☁️</div><div class="rb-name">Cloud Engineer</div><div class="rb-cat">Cloud Computing · 28 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Cybersecurity Analyst')"><div class="rb-icon">🔐</div><div class="rb-name">Cybersecurity Analyst</div><div class="rb-cat">Security · 30 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('UI/UX Designer')"><div class="rb-icon">✏️</div><div class="rb-name">UI/UX Designer</div><div class="rb-cat">Design · 20 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Product Manager')"><div class="rb-icon">🧭</div><div class="rb-name">Product Manager</div><div class="rb-cat">Product · 26 weeks</div></button>
+      <button class="role-btn" onclick="loadRoadmap('Mobile App Developer')"><div class="rb-icon">📱</div><div class="rb-name">Mobile Developer</div><div class="rb-cat">Mobile · 24 weeks</div></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     ROADMAP VIEW
+════════════════════════════════ -->
+<div id="roadmap-view">
+
+  <!-- Hero -->
+  <div class="rm-hero" id="rm-hero">
+    <div class="rm-hero-bg"></div>
+    <div class="rm-hero-grid"></div>
+    <div class="rm-hero-orb1"></div>
+    <div class="rm-hero-orb2"></div>
+    <div class="rm-hero-content">
+      <div class="rm-hero-tag" id="rh-tag">Personalised Career Roadmap</div>
+      <h1 class="rm-hero-h1" id="rh-h1">Loading<br><em>your roadmap…</em></h1>
+      <div class="rm-hero-meta" id="rh-meta">
+        <div class="rm-meta-chip mc-weeks">⏱ <span id="rh-weeks">— weeks</span></div>
+        <div class="rm-meta-chip mc-phase">📋 <span id="rh-phases">— phases</span></div>
+        <div class="rm-meta-chip mc-score">🎯 <span id="rh-milestones">— milestones</span></div>
+      </div>
+      <p class="rm-hero-sub" id="rh-sub">Your precise, week-by-week career path awaits.</p>
+      <div class="rm-hero-btns" id="rh-btns">
+        <button class="btn-start" onclick="document.getElementById('phase-1-section').scrollIntoView({behavior:'smooth'})">🚀 Start Phase 1 →</button>
+        <button class="btn-overview" onclick="backToRolePicker()">← Change Role</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky phase bar -->
+  <div class="rm-sticky-bar" id="rm-sticky-bar">
+    <div class="rsb-role" id="rsb-role-name">—</div>
+    <div class="rsb-phases" id="rsb-phases"></div>
+    <div class="rsb-right">
+      <div class="rsb-prog-wrap">
+        <div class="rsb-prog-label" id="rsb-prog-label">0% ready</div>
+        <div class="rsb-prog-bar"><div class="rsb-prog-fill" id="rsb-prog-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main roadmap content -->
+  <div class="rm-content" id="rm-content-area">
+    <!-- Phases injected here -->
+
+    <!-- Guidance section -->
+    <div class="guidance-section reveal">
+      <div class="gs-header">
+        <div class="gs-title-area">
+          <div class="gs-eyebrow">💬 Alumni & Expert Voices</div>
+          <div class="gs-title">Real talk from people <em style="font-family:var(--serif);font-style:italic;font-weight:300;color:var(--purple-b)">already there.</em></div>
+          <div class="gs-sub">Guidance from professionals in this exact role — what they wish they knew, what actually matters, and what recruiters never tell you.</div>
+        </div>
+        <button class="gs-add-btn" onclick="openGuidanceModal()">+ Share your experience</button>
+      </div>
+      <div class="guidance-grid" id="guidance-grid">
+        <div class="guidance-empty">
+          <div class="ge-icon">✨</div>
+          <div class="ge-text">Be the first to share advice for freshers following this path.<br>Your insights could save someone months of confusion.</div>
+          <div class="ge-cta" onclick="openGuidanceModal()">Share your experience →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Career compass -->
+    <div class="compass-section reveal">
+      <div class="gs-eyebrow" style="margin-bottom:8px">🧭 Career Compass</div>
+      <div class="gs-title" style="font-size:22px;font-weight:800;letter-spacing:-.04em;margin-bottom:6px">Adjacent roles <em style="font-family:var(--serif);font-style:italic;font-weight:300;color:var(--purple-b)">you can also target.</em></div>
+      <div class="gs-sub" style="max-width:480px">Based on the skills in this roadmap, these roles are natural alternatives or stepping stones.</div>
+      <div class="compass-grid" id="compass-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     GUIDANCE MODAL
+════════════════════════════════ -->
+<div class="modal-overlay" id="guidance-modal" onclick="closeModalOnBg(event)">
+  <div class="modal-box">
+    <div class="modal-stripe"></div>
+    <button class="modal-close-btn" onclick="closeGuidanceModal()">✕</button>
+    <div class="modal-inner">
+      <div class="modal-title">Share Your Guidance</div>
+      <div class="modal-sub">Already working in this role? Leave real advice for students following this roadmap.</div>
+      <div class="field"><label>Your Name</label><input type="text" id="g-name" placeholder="e.g. Aisha Khan" autocomplete="off"></div>
+      <div class="field"><label>Current Role & Company</label><input type="text" id="g-role" placeholder="e.g. Backend Engineer @ Razorpay" autocomplete="off"></div>
+      <div class="field"><label>Years of Experience</label><input type="number" id="g-exp" placeholder="e.g. 4" min="0" autocomplete="off"></div>
+      <div class="field"><label>Your honest advice for freshers</label><textarea id="g-advice" placeholder="What do you wish someone had told you? Be specific — the more real, the more helpful."></textarea></div>
+      <button class="modal-submit" onclick="submitGuidance()">Share Guidance →</button>
+      <div class="modal-status" id="g-status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// LOCAL STORAGE HELPER
+// ═══════════════════════════════════════════════════════
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem('gs_' + k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem('gs_' + k, JSON.stringify(v)),
+};
+
+// ═══════════════════════════════════════════════════════
+// CURSOR
+// ═══════════════════════════════════════════════════════
+const cur = document.getElementById('cur');
+const ring = document.getElementById('cur-ring');
+let rx=0,ry=0,cx=0,cy=0;
+document.addEventListener('mousemove', e => { cx=e.clientX; cy=e.clientY; cur.style.left=cx+'px'; cur.style.top=cy+'px'; });
+(function anim(){ rx+=(cx-rx)*.1; ry+=(cy-ry)*.1; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(anim); })();
+document.addEventListener('mouseover', e => {
+  if (e.target.closest('button,a,.role-btn,.resource-card,.guidance-card,.compass-card,.we-card')) {
+    cur.style.width='18px'; cur.style.height='18px';
+    ring.style.width='48px'; ring.style.height='48px'; ring.style.borderColor='rgba(124,92,252,.65)';
+  }
+});
+document.addEventListener('mouseout', e => {
+  if (e.target.closest('button,a,.role-btn,.resource-card,.guidance-card,.compass-card,.we-card')) {
+    cur.style.width='10px'; cur.style.height='10px';
+    ring.style.width='32px'; ring.style.height='32px'; ring.style.borderColor='rgba(124,92,252,.35)';
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// SCROLL PROGRESS + NAV SCROLL
+// ═══════════════════════════════════════════════════════
+window.addEventListener('scroll', () => {
+  const total = document.documentElement.scrollHeight - innerHeight;
+  document.getElementById('scroll-prog').style.width = (scrollY / total * 100) + '%';
+  document.getElementById('nav').classList.toggle('scrolled', scrollY > 40);
+  updateActivePhaseTab();
+});
+
+// ═══════════════════════════════════════════════════════
+// REVEAL ON SCROLL
+// ═══════════════════════════════════════════════════════
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+
+function observeReveals() {
+  document.querySelectorAll('.reveal, .we-card').forEach(el => revealObs.observe(el));
+}
+
+// ═══════════════════════════════════════════════════════
+// PAGE TRANSITION ENGINE
+// ═══════════════════════════════════════════════════════
+function transitionIn(cb) {
+  const overlay = document.getElementById('page-transition');
+  const line = document.getElementById('transition-line');
+  overlay.classList.remove('exit','gone');
+  overlay.classList.add('enter');
+  line.classList.add('loading');
+  setTimeout(() => {
+    cb();
+    overlay.classList.remove('enter');
+    overlay.classList.add('exit');
+    line.classList.remove('loading');
+    setTimeout(() => { overlay.classList.add('gone'); }, 600);
+  }, 580);
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goBack() {
+  window.history.back ? window.history.back() : (window.location.href = 'index.html');
+}
+
+function backToRolePicker() {
+  transitionIn(() => {
+    document.getElementById('roadmap-view').classList.remove('visible');
+    document.getElementById('roadmap-view').style.display = 'none';
+    document.getElementById('role-picker').classList.add('visible');
+    document.getElementById('nav-role-label').textContent = 'Career Roadmap';
+    window.scrollTo(0,0);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPREHENSIVE ROADMAP DATA
+// ═══════════════════════════════════════════════════════
+const ROADMAPS = {
+
+'Full Stack Developer': {
+  weeks: 24, phases: 3, milestones: 6,
+  heroDesc: 'From zero to shipping full-stack applications — React frontend, Node.js APIs, databases, auth, and deployment. This is one of the highest-demand tracks in Indian tech.',
+  alternatives: [
+    { role: 'Backend Developer', pct: 75, sal: '₹5.5L–₹13L', desc: 'Focus entirely on APIs, databases, and server architecture.' },
+    { role: 'Frontend Developer', pct: 80, sal: '₹5L–₹12L', desc: 'Specialise in UI, UX implementation, and performance.' },
+    { role: 'DevOps Engineer', pct: 55, sal: '₹7L–₹16L', desc: 'Take the infra + deployment skills and go deeper.' }
+  ],
+  phases: [
+    {
+      id: 'p1', label: 'Phase 1', title: 'Web Foundations & JavaScript Mastery',
+      duration: '8 weeks', goal: 'Build a rock-solid foundation in HTML, CSS, JavaScript ES6+, and Git — the skills every full-stack role will test in interviews.',
+      skills: 4, checkpoints: 1, milestones_count: 2,
+      weeks: [
+        {
+          week: 'Week 1–2', type: 'normal', title: 'HTML5 & Modern CSS',
+          desc: 'Semantic HTML and modern CSS are tested in every frontend screening. Focus on layouts, responsive design, and accessibility — not just making things "look good".',
+          tasks: [
+            'Build 5 complete page layouts using CSS Grid and Flexbox only',
+            'Implement dark mode toggle using CSS custom properties',
+            'Recreate a real website UI (Swiggy landing page, Airbnb card) pixel-perfectly',
+            'Learn and apply WCAG accessibility basics (alt text, ARIA labels, keyboard nav)'
+          ],
+          resources: [
+            { icon:'🌐', name:'MDN Web Docs — HTML & CSS Reference', type:'free', why:'The gold standard. Every browser quirk, every property, every example. Bookmark this for life.', how:'<strong>How to use it efficiently:</strong> Don\'t read linearly. Use it as a reference while building. When stuck on a CSS property, look it up here — read the syntax, browser compat, and try the live example. Build the habit now.', tags:['free','reference'] },
+            { icon:'📺', name:'Kevin Powell — CSS YouTube Channel', type:'free', why:'The best CSS educator online. His videos on Flexbox, Grid, and responsive design are cleaner than any paid course.', how:'<strong>How to use it:</strong> Watch his "Build a Responsive Website" series. Code along, then rebuild it without the video. Repetition is the only way CSS sticks.', tags:['free','video'] },
+            { icon:'🏋', name:'Frontend Mentor — Challenges', type:'free', why:'Real design specs to implement. Forces you to face the gap between "watching tutorials" and "actually building".', how:'<strong>Start with:</strong> Complete 3 Newbie challenges → 2 Junior challenges. Submit each one. Read how others solved the same problem differently.', tags:['free','practice'] }
+          ],
+          skills_earned: ['HTML5 Semantics', 'CSS Grid', 'CSS Flexbox', 'Responsive Design', 'CSS Custom Properties']
+        },
+        {
+          week: 'Week 3–5', type: 'milestone', title: '🎯 JavaScript Core — ES6+ Mastery',
+          desc: 'JavaScript is the most important language in this track. Don\'t rush this. Closures, promises, async/await, and the event loop are asked in every JS interview.',
+          tasks: [
+            'Complete the 30 Days of JavaScript challenge (all 30 days, no skipping)',
+            'Build a DOM-heavy interactive quiz app with score tracking and local storage',
+            'Implement 5 Array methods (map, filter, reduce, find, every) with real use cases',
+            'Write a mini Promise library from scratch to understand async deeply',
+            'Solve 20 Easy JS problems on LeetCode'
+          ],
+          resources: [
+            { icon:'📖', name:'javascript.info — The Modern JavaScript Tutorial', type:'free', why:'The most comprehensive free JavaScript resource. Written like a textbook but with interactive examples. Used by JavaScript engineers at major companies.', how:'<strong>Study plan:</strong> Read Part 1 (Core JS) completely — every chapter, every exercise. Part 2 (Browser APIs) — selective. Skip Part 3 until you need Node.js. Take handwritten notes on closures and prototype chains.', tags:['free','reading'] },
+            { icon:'📺', name:'Wes Bos — JavaScript 30', type:'free', why:'30 projects in 30 days using vanilla JS — no frameworks, no libraries. Forces you to understand what React is actually doing for you.', how:'<strong>How to use it:</strong> Watch each video, pause before the solution, try yourself for 20 mins, then watch the solution. Rebuild each project solo the next day from memory.', tags:['free','video','practice'] },
+            { icon:'🧠', name:'Eloquent JavaScript — Book (Free Online)', type:'free', why:'Dense, challenging, but the exercises here genuinely test your understanding. Chapter 5 (Higher-Order Functions) is worth re-reading 3 times.', how:'<strong>Strategy:</strong> Read Chapters 1–6, do every exercise. Don\'t rush. If an exercise stumps you for 40 mins, look at the hint — not the answer.', tags:['free','reading'] }
+          ],
+          skills_earned: ['ES6+ Syntax', 'Async/Await', 'Closures', 'Event Loop', 'DOM Manipulation', 'Promises']
+        },
+        {
+          week: 'Week 6–7', type: 'normal', title: 'Git, GitHub & Professional Workflow',
+          desc: 'Every engineering team in the world uses Git. Employers look at your GitHub before your resume. Your commit history tells a story — make it a good one.',
+          tasks: [
+            'Set up a professional GitHub profile with a README.md that showcases you',
+            'Practice branching, PRs, rebase, merge conflicts on a test repo daily',
+            'Open your first pull request to a real open-source project (hacktoberfest, good-first-issue)',
+            'Learn conventional commits: feat:, fix:, docs:, chore: — use them from today'
+          ],
+          resources: [
+            { icon:'📚', name:'Pro Git Book (progit.org — 100% Free)', type:'free', why:'The definitive Git reference written by Scott Chacon. Chapters 1–3 will cover 90% of what you need daily. Chapter 7 is gold for advanced workflows.', how:'<strong>Read Chapters 1–3 first,</strong> then practice every command in your terminal. Return to Chapter 7 when you join a team. Keep it bookmarked.', tags:['free','reading'] },
+            { icon:'🎮', name:'Learn Git Branching (learngitbranching.js.org)', type:'free', why:'Interactive visual game that teaches Git branching, rebasing, and cherry-picking. The visuals make abstract concepts concrete.', how:'<strong>Complete all levels</strong> in "Main" and "Remote" sections. It takes ~3 hours but saves you weeks of confusion later.', tags:['free','interactive'] },
+            { icon:'🌐', name:'GitHub Docs — GitHub Flow Guide', type:'free', why:'The exact workflow used at most companies. Understanding feature branches, PRs, and code review is a must for any job.', how:'<strong>Read it once, implement it immediately.</strong> Every project you build from now on should use GitHub Flow — even if you\'re working solo.', tags:['free','reference'] }
+          ],
+          skills_earned: ['Git Branching', 'GitHub PRs', 'Conventional Commits', 'Open Source Contribution']
+        },
+        {
+          week: 'Week 8', type: 'checkpoint', title: '✅ Checkpoint: Deploy Your First Project',
+          desc: 'Shipping is the skill that separates developers who build for fun from engineers who build for impact. Your first public deployment matters.',
+          tasks: [
+            'Build a fully responsive portfolio website with at least 3 sections',
+            'Deploy it live via Netlify or GitHub Pages (free)',
+            'Write a detailed README: what it does, how to run it, screenshots',
+            'Share the live URL on LinkedIn — your first public piece of work'
+          ],
+          resources: [
+            { icon:'🚀', name:'Netlify Docs — Getting Started', type:'free', why:'Netlify is the fastest way to deploy static sites. Drag-and-drop or connect your GitHub — it\'s production-grade infrastructure for free.', how:'<strong>Deploy your portfolio in under 10 minutes.</strong> Connect your GitHub repo, set build command, and it auto-deploys on every push. This is your workflow from now on.', tags:['free','tool'] },
+            { icon:'📝', name:'GitHub README Templates (github.com/othneildrew)', type:'free', why:'A great README is how senior engineers signal quality. This template has all the sections recruiters look for.', how:'<strong>Customise it fully.</strong> Never use it as-is. Your README should include: what problem it solves, screenshots, tech stack, local setup steps, and what you learned.', tags:['free','reference'] }
+          ],
+          skills_earned: ['Deployment', 'Netlify', 'Portfolio Building', 'Technical Writing']
+        }
+      ]
+    },
+    {
+      id: 'p2', label: 'Phase 2', title: 'React, Node.js & Full Stack Apps',
+      duration: '10 weeks', goal: 'Build and deploy complete full-stack applications with auth, databases, and APIs — the exact skills in every Full Stack job description.',
+      skills: 6, checkpoints: 1, milestones_count: 3,
+      weeks: [
+        {
+          week: 'Week 9–11', type: 'milestone', title: '🎯 React — From Components to Context',
+          desc: 'React is the dominant frontend framework in Indian tech (Flipkart, Razorpay, Swiggy all use it). Learn the mental model first — thinking in components — before memorising APIs.',
+          tasks: [
+            'Build a React app with 5+ components without watching tutorials (test your mental model)',
+            'Implement useState, useEffect, useContext, and useRef in real scenarios',
+            'Create a multi-page SPA using React Router v6',
+            'Build a weather app with real API integration and loading/error states',
+            'Refactor a class component into hooks (understand why hooks exist)'
+          ],
+          resources: [
+            { icon:'📖', name:'react.dev — Official React Documentation', type:'free', why:'The redesigned React docs (2023) are the best learning resource for React. The interactive sandboxes let you experiment without setup.', how:'<strong>Study path:</strong> Complete "Learn React" section (7 chapters) before anything else. Do every challenge. Then use the "API Reference" section when building. Skip YouTube until you\'ve read the docs.', tags:['free','reference'] },
+            { icon:'📺', name:'Scrimba — Learn React for Free', type:'free', why:'Interactive coding environment inside the video. You pause and edit the code right in the browser. Forces active learning vs passive watching.', how:'<strong>How to use it:</strong> Complete the full course in 2 weeks. Every time you learn a concept, immediately close the video and rebuild it from memory in a blank CodeSandbox.', tags:['free','interactive'] },
+            { icon:'📺', name:'Jack Herrington — No BS TS & React', type:'free', why:'Production-grade React patterns. Once you know the basics, his videos show how senior engineers actually architect React apps.', how:'<strong>Watch after Scrimba:</strong> His videos on useCallback optimisation, custom hooks, and React Query are directly interview-relevant.', tags:['free','video'] }
+          ],
+          skills_earned: ['React JSX', 'useState', 'useEffect', 'React Router', 'Custom Hooks', 'Context API']
+        },
+        {
+          week: 'Week 12–14', type: 'milestone', title: '🎯 Node.js, Express & REST APIs',
+          desc: 'The backend is where business logic lives. Build APIs that handle auth, CRUD, error handling, and middleware — the exact skills companies test in backend interviews.',
+          tasks: [
+            'Build a complete REST API: User registration, login (JWT), CRUD for resources',
+            'Add middleware: input validation (Joi/Zod), rate limiting, error handling',
+            'Connect to MongoDB using Mongoose — design 3 different schemas',
+            'Document your API using Swagger/OpenAPI spec',
+            'Write integration tests using Jest and Supertest'
+          ],
+          resources: [
+            { icon:'📺', name:'Traversy Media — Node.js REST API (YouTube)', type:'free', why:'Brad Traversy\'s tutorials are the industry standard for beginner-to-intermediate backend content. Practical, no fluff.', how:'<strong>Build along, then rebuild solo.</strong> After the tutorial, delete your code and rebuild the same API without watching. The second build is where you actually learn.', tags:['free','video'] },
+            { icon:'📖', name:'Node.js Official Documentation (nodejs.org)', type:'free', why:'The docs cover the core modules (fs, http, path, crypto) that you\'ll use in every production Node project. Understanding the event loop chapter is essential.', how:'<strong>Read the "Guides" section</strong> — especially "Anatomy of an HTTP Transaction" and "The Node.js Event Loop". Then reference docs during building.', tags:['free','reference'] },
+            { icon:'📖', name:'Express.js Documentation (expressjs.com)', type:'free', why:'Clean, concise reference for routing, middleware, and error handling. Every Express pattern you\'ll ever need is documented here.', how:'<strong>Read the "Guide" section top to bottom once.</strong> Then bookmark "API Reference" for when you\'re building. Pay special attention to the error-handling middleware section.', tags:['free','reference'] }
+          ],
+          skills_earned: ['Node.js', 'Express.js', 'JWT Auth', 'REST APIs', 'Middleware', 'Input Validation']
+        },
+        {
+          week: 'Week 15–16', type: 'normal', title: 'Databases: MongoDB & PostgreSQL',
+          desc: 'Every full-stack application stores data. Know both a NoSQL and a SQL database — interviews often ask you to justify which one to use and why.',
+          tasks: [
+            'Design 3 schemas: e-commerce (relational), blog (document), real-time chat (mixed)',
+            'Write aggregation pipelines in MongoDB for real analytics queries',
+            'Write complex SQL: JOINs, CTEs, window functions, indexes',
+            'Compare query performance between indexed and non-indexed collections'
+          ],
+          resources: [
+            { icon:'🎓', name:'MongoDB University — M001 (Free Course)', type:'free', why:'MongoDB\'s own free certification course. Teaches the data model, queries, and aggregation framework with graded labs.', how:'<strong>Complete M001 fully</strong> (takes ~3 days). Get the certificate. Then do M121 (Aggregation) which is directly asked in data engineer and backend interviews.', tags:['free','course'] },
+            { icon:'🌐', name:'PostgreSQL Tutorial (postgresqltutorial.com)', type:'free', why:'Structured from beginner to advanced PostgreSQL. Better than the official docs for learning sequentially. Covers everything from SELECT to stored procedures.', how:'<strong>Complete sections 1–8</strong> (fundamentals through joins and subqueries). Then tackle window functions and CTEs. Practice every example in a live database.', tags:['free','reading'] },
+            { icon:'📖', name:'Prisma Docs — ORM & Database Workflows', type:'free', why:'Prisma is the ORM used by most modern Node.js companies. Its schema definition language makes database migrations clean and type-safe.', how:'<strong>Start with the "Quickstart" guide,</strong> then implement Prisma in your Phase 2 project instead of raw Mongoose. The migration workflow is what you\'ll use in every job.', tags:['free','tool'] }
+          ],
+          skills_earned: ['MongoDB', 'PostgreSQL', 'Schema Design', 'SQL Joins & CTEs', 'Prisma ORM']
+        },
+        {
+          week: 'Week 17–18', type: 'checkpoint', title: '✅ Checkpoint: Full Stack App — Live & Deployed',
+          desc: 'Your first complete full-stack application. This is the project you talk about in interviews. Make it something you\'re genuinely proud of.',
+          tasks: [
+            'Ship a complete MERN/PERN app with: Auth, CRUD, real API, deployed frontend + backend',
+            'Use environment variables correctly — no secrets in GitHub, ever',
+            'Set up error boundaries in React, global error handler in Express',
+            'Write a case study README: Problem → Tech choices → Architecture → Screenshots → Learnings'
+          ],
+          resources: [
+            { icon:'🚀', name:'Render.com — Free Backend Hosting', type:'free', why:'The best free tier for deploying Node.js APIs. Spins up in 60 seconds, supports environment variables, and auto-deploys from GitHub.', how:'<strong>Deploy your Express API here.</strong> Free tier sleeps after inactivity — use a ping service like uptimerobot.com to keep it awake if needed.', tags:['free','tool'] },
+            { icon:'🚀', name:'Vercel — Frontend Hosting (Free Tier)', type:'free', why:'The fastest frontend deployment platform. Next.js is built by Vercel — it\'s the industry default for React app deployment.', how:'<strong>Connect your GitHub repo,</strong> set environment variables in the dashboard, and you\'re done. Preview deployments on every PR are a fantastic workflow.', tags:['free','tool'] }
+          ],
+          skills_earned: ['Full Stack Architecture', 'Deployment', 'Environment Config', 'Production Debugging']
+        }
+      ]
+    },
+    {
+      id: 'p3', label: 'Phase 3', title: 'Portfolio, DevOps Basics & Job Hunt',
+      duration: '6 weeks', goal: 'Two strong deployed projects, an optimised job application machine, and the interview confidence to land your first role.',
+      skills: 4, checkpoints: 1, milestones_count: 1,
+      weeks: [
+        {
+          week: 'Week 19–20', type: 'normal', title: 'Docker, CI/CD & Production Thinking',
+          desc: 'Junior developers write code. Mid-level engineers ship code reliably. Understanding Docker and basic CI/CD gives you a huge advantage in interviews.',
+          tasks: [
+            'Dockerize your Phase 2 project — write a Dockerfile and docker-compose.yml',
+            'Set up GitHub Actions: auto-run tests on every push, deploy on merge to main',
+            'Add a basic health check endpoint to your API',
+            'Read about 12-factor app methodology — understand why it exists'
+          ],
+          resources: [
+            { icon:'📺', name:'TechWorld with Nana — Docker for Developers', type:'free', why:'The clearest explanation of containers for developers. Nana\'s teaching style is concise and practically oriented. 5M+ views for a reason.', how:'<strong>Watch her 1-hour Docker crash course,</strong> then Dockerize your own project. The real learning is applying it yourself, not watching more videos.', tags:['free','video'] },
+            { icon:'📖', name:'GitHub Actions Documentation — Quickstart', type:'free', why:'GitHub Actions is the CI/CD tool every developer team uses. Setting up a basic workflow is now a baseline expectation for junior engineers.', how:'<strong>Start with the "Quickstart" guide.</strong> Build one workflow: run tests on PR, deploy to Render on push to main. That\'s enough to mention confidently in interviews.', tags:['free','reference'] }
+          ],
+          skills_earned: ['Docker', 'docker-compose', 'GitHub Actions', 'CI/CD Basics']
+        },
+        {
+          week: 'Week 21–23', type: 'milestone', title: '🎯 2 Portfolio Projects — Ship Real Things',
+          desc: 'Your portfolio is your strongest job application. Two well-documented, deployed projects that solve real problems beat 10 tutorial clones every time.',
+          tasks: [
+            'Project 1: Something with real-time features (Socket.io chat, live collaboration)',
+            'Project 2: Something that solves a problem you personally have (automation, tool, platform)',
+            'Both must be: deployed live, well-documented, with a recorded demo (Loom)',
+            'Write a 500-word case study for each: problem → decisions → challenges → results'
+          ],
+          resources: [
+            { icon:'💡', name:'Projectideas.io', type:'free', why:'Curated list of real-world project ideas sorted by difficulty and tech stack. Filter by "Full Stack" for relevant ideas.', how:'<strong>Don\'t pick random projects.</strong> Pick something you\'d actually use or that solves a problem you\'ve personally experienced. Passion projects are more compelling in interviews.', tags:['free','inspiration'] },
+            { icon:'🎥', name:'Loom — Free Screen Recording', type:'free', why:'Record a 3-minute walkthrough of each project. Recruiters watch these — it shows communication skills and product thinking, not just code.', how:'<strong>Record: project overview → key feature demo → 30 seconds on the most interesting technical challenge.</strong> Link the Loom video in your README and LinkedIn post.', tags:['free','tool'] }
+          ],
+          skills_earned: ['Product Thinking', 'Real-time Systems', 'Technical Communication', 'Project Architecture']
+        },
+        {
+          week: 'Week 24', type: 'checkpoint', title: '✅ Final Checkpoint: Apply with Confidence',
+          desc: 'You\'re ready. The question now is consistency of effort — not more learning. Apply every day, network every day, improve every day.',
+          tasks: [
+            'ATS-optimise your resume (use Resume Worded — free scan)',
+            'Apply to 8–10 roles per week (job boards + direct referrals)',
+            'Connect with 2–3 engineers at target companies per week on LinkedIn',
+            'Do at least 1 mock interview per week (Pramp is free, peer-to-peer)',
+            'Solve 2–3 LeetCode problems daily (Easy/Medium focus)'
+          ],
+          resources: [
+            { icon:'🔍', name:'Instahyre — Indian Tech Job Board', type:'free', why:'The best tech job board for Indian companies. Better signal-to-noise than Naukri. Companies actively post here.', how:'<strong>Set up job alerts for "Full Stack", your city, and ₹6L+ salary filter.</strong> Apply within 24 hours of posting — early applications have higher response rates.', tags:['free','tool'] },
+            { icon:'🤝', name:'Pramp.com — Free Peer Mock Interviews', type:'free', why:'Real peer-to-peer technical interviews. You interview someone, they interview you. The discomfort of a real interview is what you\'re training for.', how:'<strong>Book 1 session per week minimum.</strong> Treat it like a real interview — camera on, quiet room, timed. Review your recording after each session.', tags:['free','practice'] },
+            { icon:'🧠', name:'NeetCode.io — Structured DSA Practice', type:'free', why:'Neetcode has organized LeetCode problems into 15 patterns. Working through patterns is 10x more efficient than random LeetCode grinding.', how:'<strong>Follow the NeetCode 150 list,</strong> in order. Do Arrays & Hashing, Two Pointers, Sliding Window first. These appear in 80% of Full Stack coding rounds.', tags:['free','practice'] }
+          ],
+          skills_earned: ['Interview Skills', 'Resume Optimisation', 'Networking', 'DSA Patterns']
+        }
+      ]
+    }
+  ]
+},
+
+'Data Scientist': {
+  weeks: 32, phases: 3, milestones: 7,
+  heroDesc: 'Python → statistics → machine learning → deep learning → deployment. The Data Scientist track is the most mathematically intensive in tech — but the salaries reflect it.',
+  alternatives: [
+    { role: 'ML Engineer', pct: 70, sal: '₹8L–₹20L', desc: 'Take your ML skills and focus on productionising models.' },
+    { role: 'Data Analyst', pct: 85, sal: '₹4L–₹10L', desc: 'SQL + dashboards + business insights. Faster to enter.' },
+    { role: 'Data Engineer', pct: 60, sal: '₹7L–₹16L', desc: 'Build the data pipelines that power Data Science work.' }
+  ],
+  phases: [
+    {
+      id: 'p1', label: 'Phase 1', title: 'Python, Statistics & Data Wrangling',
+      duration: '10 weeks', goal: 'Fluent Python for data, rigorous statistical thinking, and the ability to wrangle any dataset end-to-end.',
+      skills: 5, checkpoints: 1, milestones_count: 2,
+      weeks: [
+        { week:'Week 1–3', type:'milestone', title:'🎯 Python for Data Science', desc:'Python fluency is non-negotiable. The data science ecosystem (NumPy, Pandas, sklearn) all requires you to think Pythonically.', tasks:['Complete Python for Everybody (auditable on Coursera for free)','Solve 30 Python challenges on HackerRank (Easy + Medium)','Build a data processing CLI tool using only stdlib','Understand list comprehensions, generators, and decorators — these appear in DS code reviews'], resources:[{icon:'🎓',name:'Python for Everybody — Dr. Chuck (Coursera, free audit)',type:'free',why:'The most beginner-friendly Python course ever made. 5M+ learners. Dr. Chuck explains concepts in plain English with no assumed knowledge.',how:'<strong>Audit it for free</strong> (select "Audit" when prompted for payment). Complete all 5 courses in the specialization. Do every assignment even when auditing — discipline matters.',tags:['free','course']},{icon:'📖',name:'Automate the Boring Stuff with Python (automatetheboringstuff.com)',type:'free',why:'Practical Python that forces you to build real tools. Writing scripts that automate tasks teaches you to think like a programmer.',how:'<strong>Read Chapters 1–9</strong> and do every project. Then pick one task in your daily life and automate it. This is the best way to solidify Python fundamentals.',tags:['free','reading']}], skills_earned:['Python Syntax','Functions & OOP','File I/O','List Comprehensions','Generators'] },
+        { week:'Week 4–7', type:'milestone', title:'🎯 NumPy + Pandas Mastery', desc:'These two libraries are used in literally every data science job. Companies test Pandas in screening calls. Master them before anything else.', tasks:['Wrangle 5 messy real-world datasets end-to-end (missing values, duplicates, wrong types)','Complete a full EDA on a Kaggle dataset with 10+ visualizations and written insights','Implement GroupBy aggregations, merge strategies, and time-series resampling','Write a data cleaning pipeline as a reusable Python function'], resources:[{icon:'🎓',name:'Kaggle Learn — Pandas (Free, 5 hours)',type:'free',why:'The best structured Pandas course. Exercises are graded and based on real datasets. 100% free with certificates.',how:'<strong>Complete all 6 lessons and all exercises.</strong> Then apply each concept on a dataset you choose yourself. The second application is what builds muscle memory.',tags:['free','course','practice']},{icon:'📖',name:'Pandas Official Documentation + User Guide',type:'free',why:'The official docs have excellent tutorials in the "User Guide" section. The 10 Minutes to Pandas intro is a classic.',how:'<strong>Read "10 Minutes to Pandas" on day 1.</strong> Bookmark the User Guide for reference during projects. When you don\'t know how to do something in Pandas, search the docs before Stack Overflow.',tags:['free','reference']},{icon:'📺',name:'StatQuest with Josh Starmer — YouTube',type:'free',why:'The clearest explanations of statistics and ML concepts you will find anywhere. His "BAM!" teaching style makes intimidating topics approachable.',how:'<strong>Watch his statistics playlist first</strong> (Normal Distribution, p-values, confidence intervals). Then his ML playlists later in Phase 2. Take notes — his videos are dense with insight.',tags:['free','video']}], skills_earned:['NumPy Arrays','Pandas DataFrames','Data Cleaning','Merges & GroupBy','EDA'] },
+        { week:'Week 8–10', type:'checkpoint', title:'✅ Checkpoint: Published EDA Project', desc:'Publish your first data project on Kaggle or GitHub. This is your proof of work as an analyst and data scientist.', tasks:['Pick a dataset you find genuinely interesting (sport, music, economics, etc.)','Write a Jupyter notebook with narrative — tell a story with the data','Create 8+ visualisations using Matplotlib and Seaborn','Publish on Kaggle and share on LinkedIn with 3 key insights you found'], resources:[{icon:'📊',name:'Seaborn Documentation + Example Gallery',type:'free',why:'Seaborn produces statistical visualizations that look publication-quality with minimal code. The example gallery is the fastest way to find the right chart type.',how:'<strong>Browse the gallery first,</strong> identify which chart fits your data story, then copy the minimal example and customise it. Never start from a blank canvas.',tags:['free','reference']},{icon:'💾',name:'Kaggle Datasets & Notebooks',type:'free',why:'Kaggle has 50,000+ datasets on every topic imaginable. Publishing your notebook here gets you community feedback and visibility.',how:'<strong>Choose a dataset you care about.</strong> Browse "featured" datasets for high quality. After publishing, read the top-voted notebooks on the same dataset and learn from how others structured their analysis.',tags:['free','platform']}], skills_earned:['Data Storytelling','Seaborn','Matplotlib','Notebook Structure','EDA Communication'] }
+      ]
+    },
+    {
+      id: 'p2', label: 'Phase 2', title: 'Machine Learning & SQL',
+      duration: '12 weeks', goal: 'Apply the full ML pipeline: data → features → model → evaluation → deployment. Plus the SQL skills every DS role requires.',
+      skills: 6, checkpoints: 1, milestones_count: 3,
+      weeks: [
+        { week:'Week 11–16', type:'milestone', title:'🎯 Core Machine Learning', desc:'Supervised and unsupervised learning — the bread and butter of data science. Understand the math behind algorithms, not just how to call sklearn.fit().', tasks:['Implement linear regression and logistic regression from scratch in NumPy','Use scikit-learn for 8 algorithms: KNN, Decision Trees, Random Forest, SVM, K-means, PCA, Gradient Boosting, Naive Bayes','Understand bias-variance tradeoff by building learning curves','Implement cross-validation, GridSearchCV, and feature importance analysis','Enter your first Kaggle competition (just to learn the workflow)'], resources:[{icon:'📚',name:'Hands-On Machine Learning with Scikit-Learn — Aurélien Géron',type:'paid',why:'The single best ML textbook for practitioners. Chapter by chapter it builds from theory to implementation. Used by ML teams at Google, Amazon, and every major tech company.',how:'<strong>Read Chapters 1–8</strong> for classical ML. Do every exercise at the end of each chapter. The GitHub repo has all code — but write it yourself first. (~₹2,500 on Amazon India)',tags:['paid','reading']},{icon:'🎓',name:'Andrew Ng — ML Specialization (Coursera, audit free)',type:'free',why:'The most famous ML course ever made. Andrew Ng\'s explanations of the math are the clearest you\'ll find. The new 2022 version uses Python instead of Octave.',how:'<strong>Audit all 3 courses for free.</strong> Focus on Courses 1 and 2. Take detailed notes on the cost function, gradient descent, and regularisation sections — these are asked in interviews.',tags:['free','course']},{icon:'🌐',name:'scikit-learn Documentation — User Guide',type:'free',why:'scikit-learn\'s documentation is among the best in open source. Each algorithm page has a mathematical explanation, parameters, examples, and references.',how:'<strong>After Géron\'s book,</strong> use this as your primary reference. When you implement a model, read its full API page. The "Common pitfalls" sections are gold.',tags:['free','reference']}], skills_earned:['Linear/Logistic Regression','Decision Trees','Random Forest','Gradient Boosting','PCA','Cross-Validation'] },
+        { week:'Week 17–19', type:'normal', title:'SQL for Data Scientists', desc:'Data scientists at Indian companies run SQL every single day — pulling data from warehouses, building features, analyzing business metrics. It\'s tested in 90% of DS interviews.', tasks:['Complete Mode Analytics SQL Tutorial from scratch (even if you know some SQL)','Write 20 queries using window functions: RANK, LAG, LEAD, NTILE','Solve the LeetCode SQL 50 challenge','Analyze a business dataset: cohort analysis, retention, funnel analysis using only SQL'], resources:[{icon:'🎓',name:'Mode Analytics SQL Tutorial (mode.com/sql-tutorial)',type:'free',why:'The best free SQL resource for data analysts and scientists. Goes from SELECT to window functions with real datasets and a browser-based editor.',how:'<strong>Complete all sections top to bottom.</strong> The Advanced section (window functions, performance tuning) is what separates junior from senior DS candidates.',tags:['free','interactive']},{icon:'🧠',name:'DataLemur — SQL Interview Questions',type:'free',why:'SQL questions from actual Meta, Google, Amazon DS interviews. Organised by company and difficulty. The explanations teach you to think analytically.',how:'<strong>Solve 5 questions per day</strong> from Easy → Medium. If stuck, think for 20 mins, then read the solution and understand every line. Revisit hard ones weekly.',tags:['free','practice']}], skills_earned:['Advanced SQL','Window Functions','CTEs','Cohort Analysis','Business Metrics'] },
+        { week:'Week 20–22', type:'checkpoint', title:'✅ Checkpoint: End-to-End ML Pipeline', desc:'A complete ML project: raw data → features → trained model → deployed web app. This is the single most important portfolio piece for a data scientist.', tasks:['Pick a problem with real-world impact (not just accuracy on MNIST)','Implement: EDA → feature engineering → model selection → hyperparameter tuning → evaluation report','Deploy the model as a Streamlit web app on Streamlit Community Cloud (free)','Write a project report: problem definition, methodology, results, limitations, next steps'], resources:[{icon:'🛠',name:'Streamlit Documentation (streamlit.io)',type:'free',why:'Build and deploy interactive ML demos in pure Python — no frontend skills needed. 30 lines of code can create a beautiful ML demo that non-technical people can use.',how:'<strong>Complete the "Get Started" guide in one sitting.</strong> Then build your ML demo: input fields → predict button → output display → visualisation of result. Deploy on Streamlit Community Cloud for free.',tags:['free','tool']},{icon:'📊',name:'ML Mastery Blog (machinelearningmastery.com)',type:'free',why:'Jason Brownlee\'s tutorials cover the full ML workflow with working code examples. Particularly good for feature engineering and model evaluation techniques.',how:'<strong>Search for your specific problem type</strong> (regression, classification, time series). Follow the structured tutorial, then adapt the code to your dataset. Don\'t copy blindly — understand each step.',tags:['free','reading']}], skills_earned:['Feature Engineering','Model Deployment','Streamlit','ML Project Documentation','Model Evaluation'] }
+      ]
+    },
+    {
+      id: 'p3', label: 'Phase 3', title: 'Deep Learning & Career Readiness',
+      duration: '10 weeks', goal: 'Differentiate with deep learning skills, build an impressive public portfolio, and navigate DS-specific interviews.',
+      skills: 4, checkpoints: 1, milestones_count: 2,
+      weeks: [
+        { week:'Week 23–28', type:'milestone', title:'🎯 Deep Learning Foundations', desc:'Neural networks, CNNs, and NLP. You don\'t need a PhD — but understanding backpropagation and fine-tuning pre-trained models is now expected at mid-level DS roles.', tasks:['Build and train a neural network from scratch in NumPy (understand backprop)','Implement image classification with a CNN using PyTorch','Fine-tune a BERT model for a text classification task using Hugging Face','Reproduce results from one recent ML paper (choose a 2022–2024 paper)'], resources:[{icon:'🎓',name:'fast.ai — Practical Deep Learning for Coders (Free)',type:'free',why:'Jeremy Howard\'s top-down teaching approach. Start with working models, then understand the theory. The fastest path from zero to training real neural networks.',how:'<strong>Complete Part 1 (Lessons 1–8)</strong> in order. Code along on Kaggle (free GPU). After each lesson, read the chapter notebook carefully and experiment with the hyperparameters.',tags:['free','course']},{icon:'📺',name:'Andrej Karpathy — Neural Networks: Zero to Hero',type:'free',why:'The most respected ML educator on YouTube. His series builds a neural network, autograd engine, and GPT from scratch in Python. Brutally educational.',how:'<strong>Watch every video in the series,</strong> in order. Code along without copy-pasting. These videos will make you understand neural networks better than most ML textbooks.',tags:['free','video']},{icon:'🤗',name:'Hugging Face Course (huggingface.co/learn)',type:'free',why:'The de-facto resource for transformer models and NLP. Hugging Face powers NLP at most major Indian tech companies today.',how:'<strong>Complete Chapter 1–4</strong> (pipeline, fine-tuning, datasets). Use their free Spaces to deploy your NLP models without any infrastructure.',tags:['free','course']}], skills_earned:['Neural Networks','CNNs','Transfer Learning','NLP with Transformers','PyTorch Basics'] },
+        { week:'Week 29–32', type:'checkpoint', title:'✅ Final Checkpoint: Portfolio & DS Interviews', desc:'3 published projects, a Kaggle profile with medals, and interview preparation for DS-specific rounds.', tasks:['Publish 3 complete projects: EDA + ML + Deep Learning — all deployed or on Kaggle','Kaggle profile: achieve Bronze medal on at least 1 competition','Practise case study interviews: A/B testing, metric trade-offs, product DS questions','Mock interviews using InterviewQuery (free tier)'], resources:[{icon:'🧠',name:'InterviewQuery — DS Interview Prep',type:'free',why:'SQL + probability + ML theory + product case study questions from real DS interviews at Flipkart, Amazon, Google. The free tier has enough questions to prepare well.',how:'<strong>Practice 2–3 questions per day</strong> across SQL, statistics, and case study categories. For each question you get wrong, go back and study the underlying concept for 30 minutes.',tags:['free','practice']},{icon:'📊',name:'Towards Data Science (towardsdatascience.com)',type:'free',why:'High-quality articles by practising data scientists. Reading 2–3 articles per week keeps you current with industry trends and teaches you how to communicate data science.',how:'<strong>Read 2 articles per week</strong> on topics you\'re weak in. Then write your own article on Medium or Hashnode about something you learned. Teaching is the best test of understanding.',tags:['free','reading']}], skills_earned:['Kaggle Competition Skills','DS Interview Prep','A/B Testing Concepts','Statistical Inference'] }
+      ]
+    }
+  ]
+},
+
+'ML Engineer': {
+  weeks: 36, phases: 3, milestones: 7,
+  heroDesc: 'The highest-paid engineering role in Indian tech. ML Engineers build the systems that train, serve, and monitor models at scale. This track demands both engineering depth and ML fundamentals.',
+  alternatives: [
+    { role: 'Data Scientist', pct: 75, sal: '₹6L–₹14L', desc: 'More analytics-focused, less infrastructure.' },
+    { role: 'AI Researcher', pct: 55, sal: '₹10L–₹30L', desc: 'Deep research — requires advanced math and publications.' },
+    { role: 'Backend Engineer', pct: 60, sal: '₹6L–₹14L', desc: 'Use your systems knowledge in product engineering.' }
+  ],
+  phases: [
+    { id:'p1', label:'Phase 1', title:'Python, Math & Classical ML', duration:'10 weeks', goal:'Rock-solid Python engineering + linear algebra + calculus + classical ML. You cannot skip the math.', skills:5, checkpoints:1, milestones_count:2, weeks:[
+      { week:'Week 1–3', type:'normal', title:'Python Engineering (Not Just Scripting)', desc:'ML Engineers write production Python. OOP, packaging, async, testing — not just scripts and notebooks.', tasks:['Refactor a Jupyter notebook into a clean Python package with proper module structure','Build a CLI tool using Click or Typer','Write unit tests with pytest for 3 Python modules','Understand virtualenv, pyproject.toml, and semantic versioning'], resources:[{icon:'📖',name:'Real Python (realpython.com) — Python Best Practices',type:'free',why:'Real Python tutorials are written by working engineers. The articles on Python packaging, OOP, and testing patterns are exactly what DS teams expect in code reviews.',how:'<strong>Read these specific articles:</strong> "Python Classes: The Power of OOP", "Python Testing with pytest", "Python Application Layouts". Apply each one immediately to your code.',tags:['free','reading']},{icon:'📺',name:'Corey Schafer — Python YouTube Series',type:'free',why:'The most clearly taught Python tutorial series on YouTube. His OOP series (8 videos) and decorators video are required watching before applying for any ML role.',how:'<strong>Complete his OOP series</strong> (8 videos). Then his Decorators and Context Managers videos. Watch at 1.25x, pause and implement yourself immediately after watching.',tags:['free','video']}], skills_earned:['Python OOP','Pytest','Package Structure','Type Hints','Python Tooling'] },
+      { week:'Week 4–7', type:'milestone', title:'🎯 Linear Algebra & Calculus for ML', desc:'You will not be able to truly understand neural networks, optimisers, or dimensionality reduction without the math. Invest in it now.', tasks:['Complete 3Blue1Brown Essence of Linear Algebra (all 15 videos, take notes)','Implement matrix multiplication, eigendecomposition, and SVD from scratch in NumPy','Complete 3Blue1Brown Essence of Calculus (chain rule, partial derivatives)','Understand gradient descent by implementing it from scratch on a toy problem'], resources:[{icon:'📺',name:'3Blue1Brown — Essence of Linear Algebra (YouTube)',type:'free',why:'Grant Sanderson\'s visual explanations of linear algebra are the most intuitive ever created. After this series, matrices and transformations will feel geometric, not abstract.',how:'<strong>Watch all 15 videos in one week.</strong> After each video, implement the concept in NumPy. The goal isn\'t memorisation — it\'s visual intuition. Pause and think before he reveals the answer.',tags:['free','video']},{icon:'🎓',name:'Gilbert Strang — MIT 18.06 Linear Algebra (YouTube/MIT OCW)',type:'free',why:'Professor Strang\'s course is the most celebrated linear algebra course in the world. More rigorous than 3Blue1Brown — essential for understanding PCA and optimisation.',how:'<strong>Watch Lectures 1–14</strong> after 3Blue1Brown to get the rigorous treatment. The matrix factorisation lectures (14, 29) are directly relevant to ML.',tags:['free','course']},{icon:'📺',name:'3Blue1Brown — Essence of Calculus (YouTube)',type:'free',why:'Visual intuition for derivatives, chain rule, and integrals. Understanding backpropagation requires understanding the chain rule deeply.',how:'<strong>Watch all 11 videos.</strong> Focus especially on episodes 4 (chain rule) and 8 (Taylor series). These are the calculus foundations that backprop is built on.',tags:['free','video']}], skills_earned:['Linear Algebra','Matrix Operations','Eigenvalues','Gradient Descent Math','Chain Rule','Partial Derivatives'] },
+      { week:'Week 8–10', type:'checkpoint', title:'✅ Checkpoint: ML Pipeline Project', desc:'A complete, reproducible ML pipeline — not a notebook, but a proper Python project with modular code.', tasks:['Train a classification and regression model with scikit-learn','Implement cross-validation, hyperparameter search, and feature importance','Structure the code as a Python package (not a notebook)','Write a model card documenting performance, limitations, and data sources'], resources:[{icon:'📖',name:'Python Machine Learning — Sebastian Raschka (3rd Ed.)',type:'paid',why:'Raschka is a research scientist at Apple. His book covers ML + deep learning with production-quality Python code. More engineering-focused than Géron\'s book.',how:'<strong>Read Chapters 1–6</strong> carefully. Every code example is implemented twice: once conceptually, once with scikit-learn. Understanding both is what makes you dangerous.',tags:['paid','reading']},{icon:'🌐',name:'Neptune.ai Blog — ML Best Practices',type:'free',why:'Neptune.ai\'s blog covers experiment tracking, model management, and MLOps patterns used at companies like Airbus, Roche, and major tech firms.',how:'<strong>Read their "MLOps Guide"</strong> and "Experiment Tracking" articles before starting this checkpoint. These patterns should inform how you structure your project.',tags:['free','reading']}], skills_earned:['Reproducible ML','Model Cards','Python ML Project Structure','Experiment Design'] }
+    ]},
+    { id:'p2', label:'Phase 2', title:'Deep Learning & MLOps', duration:'14 weeks', goal:'Train production-grade deep learning models and deploy them as scalable, monitored services.', skills:6, checkpoints:1, milestones_count:3, weeks:[
+      { week:'Week 11–16', type:'milestone', title:'🎯 Deep Learning with PyTorch', desc:'PyTorch is the framework of choice at Google DeepMind, Meta AI, and most research labs. Learn it deeply — not just the API, but the autograd engine and training loops.', tasks:['Implement backpropagation manually in NumPy, then use PyTorch autograd to verify','Build CNN for image classification from scratch','Fine-tune a pre-trained ResNet on a custom dataset','Build and train a text classifier using LSTM and then BERT (compare results)','Run all experiments on Kaggle or Google Colab (free GPU)'], resources:[{icon:'📺',name:'Andrej Karpathy — Neural Networks: Zero to Hero',type:'free',why:'The most educational deep learning series on the internet. Karpathy built OpenAI\'s training infrastructure. His teaching forces you to understand, not just use.',how:'<strong>Watch every video, code every line yourself.</strong> Do not copy-paste. The makemore and nanoGPT videos are the most important. This is a multi-week commitment.',tags:['free','video']},{icon:'🎓',name:'fast.ai — Practical Deep Learning for Coders, Part 1',type:'free',why:'Jeremy Howard\'s practical-first approach gets you training real models on real data in Lesson 1. The 2022 edition is up-to-date with modern techniques.',how:'<strong>Use Kaggle notebooks</strong> (free GPU) to run every lesson. Don\'t just watch — modify the code. Change hyperparameters. Break things. Fix them.',tags:['free','course']},{icon:'📖',name:'PyTorch Official Tutorials (pytorch.org/tutorials)',type:'free',why:'The official tutorials cover everything from tensor basics to production deployment. The "60 Minute Blitz" and "Training a Classifier" tutorials are essential.',how:'<strong>Complete "60 Minute Blitz" on Day 1.</strong> Then work through the Computer Vision and NLP tutorials. Each tutorial has exercises — do them in a Jupyter notebook with your own modifications.',tags:['free','reference']}], skills_earned:['PyTorch Autograd','CNN Architecture','Transfer Learning','LSTM','Transformer Fine-tuning'] },
+      { week:'Week 17–20', type:'milestone', title:'🎯 MLOps — From Notebook to Production', desc:'Notebooks are for experimentation. Production ML is about reproducibility, monitoring, and reliability. These skills are what make ML Engineers different from Data Scientists.', tasks:['Set up MLflow for experiment tracking on all future projects','Build a model serving API with FastAPI (inference endpoint, batch prediction)','Containerise your model + API with Docker','Set up model monitoring with Evidently AI (data drift, concept drift)','Write a GitHub Actions pipeline: train → evaluate → deploy if metrics pass'], resources:[{icon:'📖',name:'Made With ML — MLOps Course (madewithml.com)',type:'free',why:'Goku Mohandas built one of the best free MLOps curricula. Covers everything from project structure to CI/CD for ML. Used as a reference by ML Engineers at major companies.',how:'<strong>Complete the entire course top-to-bottom.</strong> The GitHub repo is fully functional. Fork it, study it, then rebuild it for your own project.',tags:['free','course']},{icon:'📖',name:'Chip Huyen — Designing Machine Learning Systems',type:'paid',why:'The definitive book on production ML systems. Chip\'s book covers data pipelines, training infrastructure, deployment, and monitoring. Required reading for senior ML interviews.',how:'<strong>Read Chapters 1–7</strong> (systems design, data engineering, training, evaluation, deployment). Take extensive notes. Every chapter has insights directly applicable to interview questions.',tags:['paid','reading']},{icon:'🛠',name:'FastAPI Documentation (fastapi.tiangolo.com)',type:'free',why:'FastAPI is the standard for serving ML models in Python. It generates OpenAPI docs automatically and is 3x faster than Flask for inference endpoints.',how:'<strong>Complete the "Tutorial" section,</strong> then build your model serving API. The "Background Tasks" and "Middleware" sections are relevant for production ML serving.',tags:['free','reference']}], skills_earned:['MLflow','FastAPI Model Serving','Docker ML','Evidently AI','GitHub Actions for ML','Model Monitoring'] },
+      { week:'Week 21–24', type:'checkpoint', title:'✅ Checkpoint: End-to-End ML System', desc:'A real ML system: training pipeline → experiment tracking → model serving API → containerised → monitored → CI/CD automated.', tasks:['Build: data loader → training script → MLflow logging → FastAPI endpoint → Docker image → GitHub Actions','Write system design documentation (draw the architecture)','Load test your inference endpoint (locust.io — free)','Open-source the project and write a detailed README'], resources:[{icon:'🛠',name:'Weights & Biases (W&B) — Free for Personal Use',type:'free',why:'The industry standard for experiment tracking, model versioning, and collaboration. Used by Hugging Face, OpenAI, and thousands of ML teams. Free tier is fully featured.',how:'<strong>Sign up and integrate W&B in one training script</strong> — it takes 5 lines of code. Then migrate your checkpoint project to log all experiments to W&B. The dashboard will immediately show you insights.',tags:['free','tool']}], skills_earned:['ML System Architecture','Load Testing','Documentation','End-to-End ML Pipeline'] }
+    ]},
+    { id:'p3', label:'Phase 3', title:'Specialisation & Senior Readiness', duration:'12 weeks', goal:'Deep expertise in one ML vertical (LLMs, Vision, RL) + ML system design interview preparation.', skills:4, checkpoints:1, milestones_count:2, weeks:[
+      { week:'Week 25–32', type:'milestone', title:'🎯 Specialise in One Vertical', desc:'Junior ML Engineers know all algorithms. Senior ML Engineers are deep experts in one area. Pick your vertical and go deep enough to have original opinions.', tasks:['Option A — LLMs: Fine-tune an LLM with LoRA, build a RAG system, deploy with vLLM','Option B — Vision: Train a detection model (YOLOv8), build a video processing pipeline','Option C — RL: Implement PPO from scratch, train an agent in a custom Gym environment','Write a technical blog post (1500+ words) on your specialisation — publish on Hugging Face blog or Towards DS'], resources:[{icon:'🤗',name:'Hugging Face Course + Documentation',type:'free',why:'The epicenter of modern ML. Their model hub, datasets library, and transformers documentation are used daily by every LLM engineer in the industry.',how:'<strong>Complete their NLP course fully.</strong> Then explore their "Tasks" section for your chosen specialisation. Contribute to a model or dataset on the hub — it\'s noticed by employers.',tags:['free','platform']},{icon:'📄',name:'Papers with Code (paperswithcode.com)',type:'free',why:'Connects every ML paper to its code implementation. Essential for staying current and for finding implementations to study and improve.',how:'<strong>Find the state-of-the-art in your specialisation,</strong> read the paper, run the code. Then write a blog post explaining the paper in plain English. This workflow differentiates you.',tags:['free','reference']}], skills_earned:['LLM Fine-tuning or Vision ML or RL','Research Paper Implementation','Technical Writing','Open Source Contribution'] },
+      { week:'Week 33–36', type:'checkpoint', title:'✅ Final: System Design Mastery & Apply', desc:'ML system design interviews are what get you ML Engineer roles, not just coding rounds. Practice designing ML systems at scale.', tasks:['Study 8 ML system design case studies: recommendation, search, fraud detection, content moderation','Practice drawing architecture diagrams (Excalidraw — free)','Apply to 5–10 ML Engineer roles per week (use referrals where possible)','Negotiate: know your market rate from levels.fyi before any offer conversation'], resources:[{icon:'📚',name:'Machine Learning System Design Interview — Alex Xu & Sahn Lam',type:'paid',why:'The most practical ML system design book. Covers YouTube recommendations, Google Street View, harmful content detection — exactly the case studies companies ask.',how:'<strong>Study 1 case study per day.</strong> After reading, close the book and try to draw the full architecture from memory. Then compare. This is how you prepare for ML system design rounds.',tags:['paid','reading']},{icon:'🌐',name:'Levels.fyi — ML Engineer Salary Data',type:'free',why:'Crowd-sourced salary data from ML Engineers at every major company. Know your market rate before you receive any offer. This data gives you negotiation power.',how:'<strong>Look up "ML Engineer" in your target cities</strong> (Bangalore, Mumbai, Hyderabad). Filter by YOE (years of experience). Use the median as your floor in salary negotiations.',tags:['free','reference']}], skills_earned:['ML System Design','Architecture Diagrams','Interview Preparation','Salary Negotiation'] }
+    ]}
+  ]
+}
+
+}; // end ROADMAPS
+
+// Fallback for roles not in the detailed DB
+function buildFallback(role) {
+  const ROLE_WEEKS = { 'Frontend Developer':16,'Backend Developer':20,'DevOps Engineer':28,'Data Analyst':20,'Cloud Engineer':28,'Cybersecurity Analyst':30,'UI/UX Designer':20,'Product Manager':26,'Mobile App Developer':24 };
+  const w = ROLE_WEEKS[role] || 24;
+  return {
+    weeks: w, phases: 3, milestones: 5,
+    heroDesc: `Your personalised week-by-week roadmap to becoming a ${role}. Curated resources, precise tasks, and expert guidance — all in one place.`,
+    alternatives: [
+      { role:'Full Stack Developer', pct:65, sal:'₹6L–₹14L', desc:'Broaden your skillset to cover the full stack.' },
+      { role:'Product Manager', pct:55, sal:'₹8L–₹20L', desc:'Move toward product ownership and strategy.' },
+      { role:'Data Analyst', pct:60, sal:'₹4L–₹10L', desc:'Add data analysis to your toolkit.' }
+    ],
+    phases: [
+      { id:'p1', label:'Phase 1', title:`Foundations of ${role}`, duration:`${Math.round(w*0.33)} weeks`, goal:'Master the foundational tools and concepts every hiring manager expects to see.', skills:4, checkpoints:1, milestones_count:2, weeks:[
+        { week:'Week 1–2', type:'normal', title:'Environment, Tooling & Community', desc:`Set up your professional development environment for ${role} and embed yourself in the community.`, tasks:['Set up a professional dev environment (IDE, terminal, extensions)','Create a GitHub profile with a pinned README.md showcasing your goals','Join 2 Discord or Slack communities for this role','Read 10 blog posts from practitioners actually working in this role to understand what they do daily'], resources:[{icon:'🌐',name:`${role} Roadmap — roadmap.sh`,type:'free',why:`roadmap.sh has community-curated skill paths for ${role} that show exactly what to learn and in what order.`,how:'<strong>Open roadmap.sh,</strong> find your role, and use it as a checklist. Don\'t follow it blindly — prioritise the skills marked as "recommended" first.',tags:['free','reference']},{icon:'📺',name:'YouTube — search "[your role] day in the life" + "[your role] roadmap 2024"',type:'free',why:'Understanding what the job actually involves (not just the skills) helps you prioritise what matters most.',how:'<strong>Watch 5 such videos from practitioners</strong> who work at Indian tech companies. Note which tools they mention most frequently — those are your priorities.',tags:['free','video']}], skills_earned:['Development Environment','GitHub Profile','Community Presence'] },
+        { week:'Week 3–'+Math.round(w*0.2), type:'milestone', title:`🎯 Core Skill #1 for ${role}`, desc:'The most fundamental skill for your target role. Study it deeply before moving on.', tasks:['Complete the top-rated free course for this skill (search Coursera, Udemy, YouTube)','Build a small project specifically practicing this skill','Read the official documentation once end-to-end','Connect with 2 practitioners and ask them: "What do you wish you\'d learned first?"'], resources:[{icon:'🎓',name:'Coursera / edX — audit for free',type:'free',why:'Most courses can be audited for free. Select "Audit" when prompted for payment.',how:'<strong>Audit the course, do all assignments,</strong> skip graded quizzes if they require payment. The learning is what matters, not the certificate at this stage.',tags:['free','course']},{icon:'📖',name:'Official Documentation for your primary tool/language',type:'free',why:'Documentation is the most accurate source of information. Tutorials go stale — docs stay current.',how:'<strong>Read the Getting Started guide fully.</strong> Bookmark the API reference. Every time you\'re unsure of something, check the docs before Stack Overflow.',tags:['free','reference']}], skills_earned:['Core Role Skill','Documentation Literacy','Self-Directed Learning'] },
+        { week:'Week '+Math.round(w*0.3)+'–'+Math.round(w*0.33), type:'checkpoint', title:'✅ Checkpoint: Phase 1 Project', desc:'Build and deploy a small but complete project that demonstrates Phase 1 skills.', tasks:['Build a project that uses Phase 1 skills end-to-end','Deploy it publicly (GitHub Pages, Netlify, Heroku, or equivalent)','Write a README explaining what it does, how to run it, and what you learned','Post it on LinkedIn with 3 key technical choices you made and why'], resources:[{icon:'🚀',name:'Netlify / Vercel / Render — Free Hosting',type:'free',why:'Free tiers make deployment accessible to everyone. Deploying publicly signals professionalism.',how:'<strong>Create a free account and deploy in under 10 minutes.</strong> The specific platform depends on your tech stack.',tags:['free','tool']}], skills_earned:['Project Deployment','Technical Communication','Portfolio Building'] }
+      ]},
+      { id:'p2', label:'Phase 2', title:'Core Skill Building', duration:`${Math.round(w*0.4)} weeks`, goal:'Fill your remaining gaps and build 2 portfolio-ready projects.', skills:5, checkpoints:1, milestones_count:2, weeks:[
+        { week:'Week '+Math.round(w*0.34)+'–'+Math.round(w*0.6), type:'milestone', title:`🎯 Advanced ${role} Skills`, desc:'The skills that differentiate junior from mid-level candidates. Study deeply, build regularly.', tasks:['Complete an advanced course or project in your primary skill area','Build a complex project integrating multiple tools from your role','Read 5 case studies from companies that do this role well','Set up a learning log — document what you learn daily for accountability'], resources:[{icon:'📚',name:'Role-specific books (search "[role] for professionals" or "engineering [role]")',type:'paid',why:'Books go deeper than any course. 1–2 role-specific books will advance your understanding faster than 20 YouTube videos.',how:'<strong>Read actively:</strong> highlight, take notes, implement every code example yourself. Aim to read 1 book per month.',tags:['paid','reading']},{icon:'🌐',name:'Dev.to + Medium — [Your Role] category',type:'free',why:'Practitioners share real-world experience here. Reading weekly keeps you current with industry trends.',how:'<strong>Follow 10 authors</strong> in your role area. Read 3 articles per week. For each article, ask: "What can I implement or test today?"',tags:['free','reading']}], skills_earned:['Advanced Role Skills','Industry Best Practices','Technical Reading'] },
+        { week:'Week '+Math.round(w*0.6+1)+'–'+Math.round(w*0.75), type:'checkpoint', title:'✅ Checkpoint: Portfolio-Grade Project', desc:'A substantial, polished project that solves a real problem — your headline portfolio piece for applications.', tasks:['Build a full-featured, production-quality project for your target role','Deploy it with proper error handling, loading states, and edge case management','Record a 3-minute Loom demo walkthrough','Get feedback from 2 practitioners in your target role (reach out on LinkedIn)'], resources:[{icon:'🎥',name:'Loom — Free Screen Recording',type:'free',why:'A video walkthrough shows recruiters more in 3 minutes than a README ever could.',how:'<strong>Script your demo:</strong> problem → solution → key technical feature → what you learned. Practice once, record once. Share the link everywhere.',tags:['free','tool']}], skills_earned:['Portfolio Project', 'Demo Communication', 'Peer Review'] }
+      ]},
+      { id:'p3', label:'Phase 3', title:'Job Readiness & Career Launch', duration:`${w - Math.round(w*0.75)} weeks`, goal:'Optimise your application materials and execute a systematic, high-volume job search.', skills:3, checkpoints:1, milestones_count:1, weeks:[
+        { week:'Week '+Math.round(w*0.76)+'–'+Math.round(w*0.88), type:'normal', title:'Resume, LinkedIn & Personal Brand', desc:'Your online presence is often seen before you\'re ever contacted. Make every element count.', tasks:['Write an ATS-optimised resume (1 page, action verbs, quantified results)','Update LinkedIn: headline, about section, featured projects, skills (50+ endorsements)','Pin your 3 best GitHub repos and ensure all have detailed READMEs','Connect with 50+ people in your target role area — build before you need'], resources:[{icon:'🔍',name:'Resume Worded (resumeworded.com) — Free ATS Scanner',type:'free',why:'Scans your resume against ATS filters and gives a score. Free tier gives actionable feedback on formatting, keywords, and impact statements.',how:'<strong>Submit your resume,</strong> fix the top 5 issues it flags, then resubmit until your score is above 70. A strong ATS score means more recruiters see your resume.',tags:['free','tool']},{icon:'💼',name:'LinkedIn — Job Search + Outreach',type:'free',why:'60% of tech hires in India come through LinkedIn. An optimised profile generates inbound recruiter messages.',how:'<strong>Optimise your headline</strong> to include keywords: "[Role] | [Primary Tech] | Open to Opportunities". Apply within 24 hours of job posting for best response rates.',tags:['free','platform']}], skills_earned:['ATS Resume','LinkedIn Optimisation','Personal Branding'] },
+        { week:'Week '+Math.round(w*0.89)+'–'+w, type:'checkpoint', title:'✅ Final Checkpoint: Execute the Job Search', desc:'Consistency wins. 8 applications + 2 networking messages + 1 mock interview per week. Every week.', tasks:['Apply to 8–10 roles per week (do not self-select yourself out of opportunities)','Send 2–3 personalised LinkedIn connection requests to engineers at target companies per week','Complete 1 mock interview per week (Pramp, Meetapro, or peer partner)','Track every application in a spreadsheet: company, role, date applied, follow-up date'], resources:[{icon:'🧠',name:'Pramp.com — Free Peer Mock Interviews',type:'free',why:'Real mock interviews with people also preparing. The pressure of a live interview is something you must practice — reading about it is not enough.',how:'<strong>Schedule your first session this week.</strong> Treat it exactly like a real interview — camera on, quiet room, no notes. Review the recording after.',tags:['free','practice']},{icon:'📋',name:'Notion / Google Sheets — Application Tracker',type:'free',why:'Tracking your applications creates accountability and reveals patterns (which companies respond, which job titles get callbacks).',how:'<strong>Create a simple tracker:</strong> Company | Role | Date Applied | Status | Notes | Follow-up Date. Update it daily. The data will inform your strategy.',tags:['free','tool']}], skills_earned:['Job Search Execution','Interview Skills','Negotiation Basics'] }
+      ]}
+    ]
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// LOAD ROADMAP
+// ═══════════════════════════════════════════════════════
+let currentRole = '';
+let currentRoadmap = null;
+
+function loadRoadmap(role) {
+  transitionIn(() => {
+    currentRole = role;
+    currentRoadmap = ROADMAPS[role] || buildFallback(role);
+
+    // Hide picker, show roadmap
+    document.getElementById('role-picker').classList.remove('visible');
+    document.getElementById('role-picker').style.display = 'none';
+
+    const rv = document.getElementById('roadmap-view');
+    rv.style.display = 'block';
+
+    // Update nav label
+    document.getElementById('nav-role-label').textContent = role;
+    document.getElementById('nav-role-label').style.display = 'block';
+
+    // Build hero
+    buildHero(role, currentRoadmap);
+    // Build sticky bar
+    buildStickyBar(role, currentRoadmap);
+    // Build phases
+    buildPhases(currentRoadmap);
+    // Build compass
+    buildCompass(currentRoadmap.alternatives);
+    // Load guidance
+    loadGuidance(role);
+
+    // Trigger hero animations after paint
+    requestAnimationFrame(() => {
+      rv.classList.add('visible');
+      setTimeout(() => { document.getElementById('rh-tag').classList.add('in'); }, 100);
+      setTimeout(() => { document.getElementById('rh-h1').classList.add('in'); }, 200);
+      setTimeout(() => { document.getElementById('rh-meta').classList.add('in'); }, 340);
+      setTimeout(() => { document.getElementById('rh-sub').classList.add('in'); }, 440);
+      setTimeout(() => { document.getElementById('rh-btns').classList.add('in'); }, 540);
+      // Animate progress bar
+      setTimeout(() => {
+        document.getElementById('rsb-prog-fill').style.width = '0%';
+        setTimeout(() => { document.getElementById('rsb-prog-fill').style.width = '100%'; }, 800);
+      }, 600);
+    });
+
+    window.scrollTo(0, 0);
+    setTimeout(() => observeReveals(), 300);
+  });
+}
+
+function buildHero(role, rd) {
+  document.getElementById('rh-h1').innerHTML = `Your path to<br><em>${role}.</em>`;
+  document.getElementById('rh-weeks').textContent = `${rd.weeks} weeks`;
+  document.getElementById('rh-phases').textContent = `${rd.phases} phases`;
+  document.getElementById('rh-milestones').textContent = `${rd.milestones} milestones`;
+  document.getElementById('rh-sub').textContent = rd.heroDesc;
+  document.querySelector('[onclick*="phase-1-section"]').setAttribute('onclick', `document.getElementById('p1-section').scrollIntoView({behavior:'smooth'})`);
+}
+
+function buildStickyBar(role, rd) {
+  document.getElementById('rsb-role-name').textContent = role;
+  document.getElementById('rsb-prog-label').textContent = 'Building roadmap…';
+  setTimeout(() => { document.getElementById('rsb-prog-label').textContent = `${rd.weeks}w journey`; }, 1000);
+
+  const phasesEl = document.getElementById('rsb-phases');
+  phasesEl.innerHTML = rd.phases.map((p, i) => `
+    <div class="rsb-phase ${i===0?'active':''}" onclick="scrollToPhase('${p.id}',this)" data-phase="${p.id}">
+      <span class="ph-num">${i+1}</span>
+      ${p.label}: ${p.title.split(':')[0].split('&')[0].trim().substring(0,20)}…
+    </div>`).join('');
+}
+
+function scrollToPhase(id, el) {
+  const sec = document.getElementById(id + '-section');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateActivePhaseTab() {
+  const phases = document.querySelectorAll('[data-phase]');
+  phases.forEach(tab => {
+    const sec = document.getElementById(tab.dataset.phase + '-section');
+    if (!sec) return;
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= 80 && rect.bottom >= 80) {
+      document.querySelectorAll('.rsb-phase').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+    }
+  });
+}
+
+function buildPhases(rd) {
+  const container = document.getElementById('rm-content-area');
+  // Remove old phase sections
+  container.querySelectorAll('.phase-section').forEach(el => el.remove());
+
+  const numColors = ['pn-1','pn-2','pn-3'];
+  const phaseHTML = rd.phases.map((p, i) => {
+    const weeks = p.weeks.map(w => buildWeekEntry(w, p.id)).join('');
+    return `
+      <div class="phase-section" id="${p.id}-section">
+        <div class="phase-header reveal">
+          <div class="phase-num-badge ${numColors[i] || 'pn-1'}">${i+1}</div>
+          <div class="phase-meta">
+            <div class="phase-label">${p.label} of ${rd.phases}</div>
+            <div class="phase-title">${p.title}</div>
+            <div class="phase-goal">${p.goal}</div>
+            <div class="phase-stats">
+              <span class="pstat">⏱ ${p.duration}</span>
+              <span class="pstat">🎯 ${p.milestones_count || 0} milestones</span>
+              <span class="pstat">✅ ${p.checkpoints || 0} checkpoints</span>
+              <span class="pstat">📚 ${p.skills} skills</span>
+            </div>
+          </div>
+        </div>
+        <div class="week-timeline">${weeks}</div>
+        ${i < rd.phases.length-1 ? '<div class="section-divider"></div>' : ''}
+      </div>`;
+  }).join('');
+
+  // Insert before guidance section
+  const guidanceSection = container.querySelector('.guidance-section');
+  guidanceSection.insertAdjacentHTML('beforebegin', phaseHTML);
+  observeReveals();
+}
+
+function buildWeekEntry(w, phaseId) {
+  const isMs = w.type === 'milestone';
+  const isCk = w.type === 'checkpoint';
+  const nodeClass = isMs ? 'wn-milestone' : isCk ? 'wn-checkpoint' : 'wn-normal';
+  const cardClass = isMs ? 'milestone-card' : isCk ? 'checkpoint-card' : '';
+  const topClass = isMs ? 'wct-milestone' : isCk ? 'wct-checkpoint' : 'wct-normal';
+  const badge = isMs ? '<span class="we-badge wb-milestone">🎯 Milestone</span>' :
+                isCk ? '<span class="we-badge wb-checkpoint">✅ Checkpoint</span>' : '';
+
+  const tasksHTML = (w.tasks || []).map(t => `
+    <li><div class="${isCk ? 'task-check' : 'task-dot'}"></div>${t}</li>`).join('');
+
+  const resourcesHTML = (w.resources || []).map(r => {
+    const tagHTML = (r.tags || []).map(tag => `<span class="res-tag rt-${tag}">${tag}</span>`).join('');
+    return `
+      <div class="resource-card rc-type-${r.tags?.[0]||'free'}">
+        <div class="res-icon">${r.icon || '📚'}</div>
+        <div class="res-body">
+          <div class="res-name">${r.name}</div>
+          <div class="res-why">${r.why}</div>
+          <div class="res-how">${r.how}</div>
+          <div class="res-tags">${tagHTML}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const skillsHTML = (w.skills_earned || []).length ? `
+    <div class="skills-earned-block">
+      <div><div class="se-label">⚡ Skills you'll earn</div>
+      <div class="se-skills">${(w.skills_earned||[]).map(s=>`<span class="se-skill">${s}</span>`).join('')}</div></div>
+    </div>` : '';
+
+  return `
+    <div class="week-entry">
+      <div class="we-left">
+        <div class="we-node ${nodeClass}"></div>
+        <div class="we-week-lbl">${w.week}</div>
+      </div>
+      <div class="we-card ${cardClass}">
+        <div class="we-card-top ${topClass}"></div>
+        <div class="we-card-body">
+          ${badge}
+          <div class="we-title">${w.title}</div>
+          <div class="we-desc">${w.desc}</div>
+          ${tasksHTML ? `<div class="we-tasks-label">This period's tasks</div><ul class="we-tasks">${tasksHTML}</ul>` : ''}
+          ${resourcesHTML ? `<div class="we-resources-label">Resources & how to use them</div><div class="we-resources">${resourcesHTML}</div>` : ''}
+          ${skillsHTML}
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildCompass(alts) {
+  const el = document.getElementById('compass-grid');
+  el.innerHTML = (alts || []).map(a => `
+    <div class="compass-card reveal">
+      <div class="cc-match-row">
+        <span class="cc-pct">${a.pct}%</span>
+        <div class="cc-bar"><div class="cc-fill" style="width:${a.pct}%"></div></div>
+      </div>
+      <div class="cc-title">${a.role}</div>
+      <div class="cc-sal">${a.sal}</div>
+      <div class="cc-desc">${a.desc}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// GUIDANCE
+// ═══════════════════════════════════════════════════════
+function loadGuidance(role) {
+  const local = LS.get('guidance') || [];
+  renderGuidance(local, role);
+}
+
+function renderGuidance(items, role) {
+  const grid = document.getElementById('guidance-grid');
+  // Default demo guidance if empty
+  const demos = [
+    { name:'Priya Nair', role_title:'Senior Frontend Engineer @ Swiggy', exp:3, advice:'Don\'t wait to feel "ready" to apply. Apply when you\'re at 70% — the gap closes faster on the job than in tutorials. Your portfolio matters more than any course certificate.' },
+    { name:'Rohan Shah', role_title:`${role} @ Razorpay`, exp:4, advice:'Recruiters spend 8 seconds on your resume. The first bullet under every role should quantify impact: "Reduced API response time by 40%" beats "Worked on API optimisation" every single time.' },
+    { name:'Aarav Singh', role_title:'Tech Lead @ CRED', exp:6, advice:'The skill nobody talks about: write clearly. Emails, Slack messages, PR descriptions, README files. Clear writing is a superpower that compounds your technical skills.' }
+  ];
+  const display = items.length ? items.slice(0,6) : demos;
+  grid.innerHTML = display.map(g => {
+    const initials = (g.name||'A').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    const exp = g.experience_years || g.exp;
+    return `
+      <div class="guidance-card">
+        <div class="gc-quote">"</div>
+        <div class="gc-advice">${g.advice||''}</div>
+        <div class="gc-person">
+          <div class="gc-avatar">${initials}</div>
+          <div>
+            <div class="gc-name">${g.name||'Anonymous'}</div>
+            <div class="gc-role">${g.role_title||g.role||'Industry Professional'}</div>
+            ${exp ? `<div class="gc-exp">⚡ ${exp} yrs experience</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  observeReveals();
+}
+
+// ═══════════════════════════════════════════════════════
+// GUIDANCE MODAL
+// ═══════════════════════════════════════════════════════
+function openGuidanceModal() {
+  document.getElementById('guidance-modal').classList.add('open');
+  setTimeout(() => document.getElementById('g-name').focus(), 300);
+}
+function closeGuidanceModal() { document.getElementById('guidance-modal').classList.remove('open'); }
+function closeModalOnBg(e) { if (e.target === document.getElementById('guidance-modal')) closeGuidanceModal(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeGuidanceModal(); });
+
+function submitGuidance() {
+  const name = document.getElementById('g-name').value.trim();
+  const roleTitle = document.getElementById('g-role').value.trim();
+  const exp = document.getElementById('g-exp').value.trim();
+  const advice = document.getElementById('g-advice').value.trim();
+  const status = document.getElementById('g-status');
+
+  if (!name || !roleTitle || !advice) {
+    status.style.display = 'block';
+    status.className = 'modal-status ms-err';
+    status.textContent = 'Please fill in your name, role, and advice.';
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+    return;
+  }
+
+  const entry = { name, role_title: roleTitle, exp: parseInt(exp)||null, advice, created_at: new Date().toISOString() };
+  const local = LS.get('guidance') || [];
+  local.unshift(entry);
+  LS.set('guidance', local);
+
+  status.style.display = 'block';
+  status.className = 'modal-status ms-ok';
+  status.textContent = '✅ Thank you! Your guidance has been added.';
+
+  document.getElementById('g-name').value = '';
+  document.getElementById('g-role').value = '';
+  document.getElementById('g-exp').value = '';
+  document.getElementById('g-advice').value = '';
+
+  renderGuidance(local, currentRole);
+  setTimeout(() => { closeGuidanceModal(); }, 1500);
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Check if coming from GapSync with a role pre-selected
+  const params = new URLSearchParams(window.location.search);
+  const preRole = params.get('role');
+  if (preRole) {
+    document.getElementById('role-picker').classList.add('visible');
+    setTimeout(() => loadRoadmap(preRole), 200);
+  } else {
+    setTimeout(() => {
+      document.getElementById('role-picker').classList.add('visible');
+    }, 100);
+  }
+  // Load any saved guidance
+  const savedGuidance = LS.get('guidance') || [];
+  if (savedGuidance.length) {
+    renderGuidance(savedGuidance, '');
+  }
+});
+</script>
+</body>
+</html>
