@@ -903,7 +903,7 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
         <button class="nav-link-btn" onclick="scrollToId('sec-form')">Profile</button>
         <button class="nav-link-btn" onclick="scrollToId('sec-results')">Results</button>
         <button class="nav-link-btn" onclick="openRoadmapPage()">🗺 Full Roadmap ↗</button>
-        <button class="nav-link-btn study-nav-btn" onclick="openStudyLLM()">📚 Study LLM</button>
+        <button class="nav-link-btn study-nav-btn" onclick="openStudyLLM()">📚 Study Buddy</button>
       </div>
       <div class="nav-user-pill"><div class="nav-avatar" id="nav-av">S</div><span id="nav-name-display">Student</span></div>
       <button class="nav-signout" onclick="signOut()">Sign out</button>
@@ -948,6 +948,22 @@ tbody tr:hover{background:rgba(255,255,255,.04)}
       <p class="sec-sub reveal rd2">Your data auto-saves as you type. Add GitHub repos for a more accurate analysis and a score boost.</p>
 
       <div class="form-card reveal rd2">
+        <!-- RESUME UPLOAD -->
+        <div style="margin-bottom:20px;padding:16px 18px;background:linear-gradient(135deg,rgba(124,92,252,.07),rgba(57,255,138,.04));border:1px solid rgba(124,92,252,.25);border-radius:13px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:13px;font-weight:700;letter-spacing:-.02em;margin-bottom:3px">📎 Upload Resume to Auto-Fill</div>
+              <div style="font-family:var(--mono);font-size:11px;color:var(--muted2)">Upload your PDF or DOCX resume — AI will extract and fill your profile fields automatically.</div>
+            </div>
+            <label id="resume-upload-label" style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,var(--purple),var(--purple-b));border-radius:9px;font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;cursor:pointer;transition:all .22s;white-space:nowrap"
+              onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(124,92,252,.4)'"
+              onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <span id="resume-upload-icon">⬆</span> <span id="resume-upload-text">Upload Resume</span>
+              <input id="resume-file-input" type="file" accept=".pdf,.doc,.docx,.txt" style="display:none" onchange="handleResumeUpload(this)">
+            </label>
+          </div>
+          <div id="resume-status" style="display:none;margin-top:10px;font-family:var(--mono);font-size:11px;padding:9px 12px;border-radius:8px"></div>
+        </div>
         <div class="form-grid">
           <div class="fg"><label>Your Name</label><input type="text" id="f-name" placeholder="e.g. Mudit Sharma"></div>
           <div class="fg"><label>Target Role</label>
@@ -2164,6 +2180,170 @@ function makeAnalysis(name, role, skills, boost) {
   };
 }
 
+// ═══════════════════════════════════════════════════════
+// RESUME UPLOAD — Auto-fill profile fields
+// ═══════════════════════════════════════════════════════
+function setResumeStatus(msg, type) {
+  const el = document.getElementById('resume-status');
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.background = type === 'ok' ? 'rgba(57,255,138,.1)' : type === 'err' ? 'rgba(255,79,106,.1)' : 'rgba(124,92,252,.1)';
+  el.style.border = '1px solid ' + (type === 'ok' ? 'rgba(57,255,138,.3)' : type === 'err' ? 'rgba(255,79,106,.3)' : 'rgba(124,92,252,.3)');
+  el.style.color = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--purple-b)';
+  el.textContent = msg;
+}
+
+async function extractResumeText(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt') {
+    return new Promise((res, rej) => {
+      const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsText(file);
+    });
+  } else if (ext === 'pdf') {
+    if (!window.pdfjsLib) {
+      await new Promise(res => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
+        document.head.appendChild(s);
+      });
+    }
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = async e => {
+        try {
+          const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const pg = await pdf.getPage(i);
+            const ct = await pg.getTextContent();
+            text += ct.items.map(x => x.str).join(' ') + '\n';
+          }
+          res(text);
+        } catch(err) { rej(err); }
+      };
+      r.readAsArrayBuffer(file);
+    });
+  } else if (ext === 'docx') {
+    if (!window.mammoth) {
+      await new Promise(res => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+        s.onload = res; document.head.appendChild(s);
+      });
+    }
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => window.mammoth.extractRawText({ arrayBuffer: e.target.result }).then(r2 => res(r2.value)).catch(rej);
+      r.readAsArrayBuffer(file);
+    });
+  }
+  throw new Error('Unsupported file type');
+}
+
+async function handleResumeUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const iconEl = document.getElementById('resume-upload-icon');
+  const textEl = document.getElementById('resume-upload-text');
+  if (iconEl) iconEl.textContent = '⏳';
+  if (textEl) textEl.textContent = 'Reading…';
+  setResumeStatus('📖 Extracting text from resume…', 'loading');
+
+  let resumeText = '';
+  try {
+    resumeText = await extractResumeText(file);
+  } catch(err) {
+    setResumeStatus('❌ Could not read file: ' + err.message, 'err');
+    if (iconEl) iconEl.textContent = '⬆'; if (textEl) textEl.textContent = 'Upload Resume';
+    return;
+  }
+
+  if (!resumeText || resumeText.trim().length < 50) {
+    setResumeStatus('❌ Could not extract enough text from this file. Try a text-based PDF or DOCX.', 'err');
+    if (iconEl) iconEl.textContent = '⬆'; if (textEl) textEl.textContent = 'Upload Resume';
+    return;
+  }
+
+  setResumeStatus('🤖 AI is parsing your resume to fill profile fields…', 'loading');
+  if (iconEl) iconEl.textContent = '🤖'; if (textEl) textEl.textContent = 'Parsing…';
+
+  // Call Anthropic API to parse resume
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `You are a resume parser. Extract the following fields from this resume text and return ONLY a JSON object with exactly these keys (no markdown, no explanation):
+{
+  "name": "full name",
+  "degree": "degree and branch e.g. B.Tech Computer Science",
+  "year": one of: "1st Year", "2nd Year", "3rd Year", "4th Year", "Graduate",
+  "cgpa": "numeric GPA if found, else empty string",
+  "skills": ["array", "of", "technical", "skills"],
+  "certs": "comma-separated certifications",
+  "projects": "brief 1-2 line description of projects",
+  "targetRole": "best matching role from this list: Full Stack Developer, Frontend Developer, Backend Developer, Data Scientist, ML Engineer, DevOps Engineer, Cloud Engineer, Cybersecurity Analyst, UI/UX Designer, Mobile App Developer, Product Manager, QA Engineer, Business Analyst, Data Engineer, Other"
+}
+
+Resume text:
+${resumeText.slice(0, 8000)}`
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '';
+    let parsed;
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('Could not parse AI response');
+    }
+
+    // Fill in the form fields
+    if (parsed.name) { const el = document.getElementById('f-name'); if (el) el.value = parsed.name; }
+    if (parsed.degree) { const el = document.getElementById('f-degree'); if (el) el.value = parsed.degree; }
+    if (parsed.cgpa) { const el = document.getElementById('f-cgpa'); if (el) el.value = parsed.cgpa; }
+    if (parsed.certs) { const el = document.getElementById('f-certs'); if (el) el.value = parsed.certs; }
+    if (parsed.projects) { const el = document.getElementById('f-projects'); if (el) el.value = parsed.projects; }
+
+    // Set year dropdown
+    if (parsed.year) {
+      const yr = document.getElementById('f-year');
+      if (yr) {
+        for (let opt of yr.options) { if (opt.value === parsed.year || opt.text === parsed.year) { yr.value = opt.value; break; } }
+      }
+    }
+
+    // Set target role dropdown
+    if (parsed.targetRole) {
+      const rl = document.getElementById('f-role');
+      if (rl) {
+        for (let opt of rl.options) { if (opt.value === parsed.targetRole || opt.text === parsed.targetRole) { rl.value = opt.value; break; } }
+      }
+    }
+
+    // Fill skills
+    if (Array.isArray(parsed.skills) && parsed.skills.length) {
+      userSkills = [...new Set([...userSkills, ...parsed.skills])];
+      renderSkills();
+    }
+
+    setResumeStatus('✅ Profile auto-filled from resume! Review and adjust if needed.', 'ok');
+    if (iconEl) iconEl.textContent = '✅'; if (textEl) textEl.textContent = 'Resume Loaded';
+  } catch(err) {
+    setResumeStatus('❌ AI parsing failed: ' + err.message + '. Try again or fill manually.', 'err');
+    if (iconEl) iconEl.textContent = '⬆'; if (textEl) textEl.textContent = 'Upload Resume';
+  }
+  input.value = '';
+}
+
 async function analyzeAndShowResults() {
   await saveProfile(false);
   const sess = getSession();
@@ -3168,6 +3348,11 @@ function SL_openModal() {
   document.getElementById('sl-name').value = '';
   document.getElementById('sl-url').value  = '';
   document.getElementById('sl-notes').value = '';
+  const fi = document.getElementById('sl-file-input');
+  if (fi) fi.value = '';
+  const fn = document.getElementById('sl-file-name');
+  if (fn) { fn.textContent=''; fn.style.display='none'; }
+  window._SL_fileText = '';
   SL_switchType('link');
   document.getElementById('sl-add-modal').style.display = 'flex';
 }
@@ -3181,19 +3366,26 @@ function SL_switchType(type) {
     b.style.borderColor= b.dataset.t === type ? 'var(--purple)' : 'var(--border)';
   });
   document.getElementById('sl-add-modal').dataset.type = type;
-  const needsUrl   = !['text','lecture'].includes(type);
-  const needsNotes = ['text','lecture','pdf'].includes(type);
+  const needsUrl   = !['text','lecture','pdf'].includes(type);
+  const needsNotes = ['text','lecture'].includes(type);
+  const needsFile  = type === 'pdf';
   document.getElementById('sl-url-row').style.display   = needsUrl   ? 'block' : 'none';
   document.getElementById('sl-notes-row').style.display = needsNotes ? 'block' : 'none';
+  document.getElementById('sl-file-row').style.display  = needsFile  ? 'block' : 'none';
 }
 function SL_confirm() {
   const type  = document.getElementById('sl-add-modal').dataset.type || 'link';
   const name  = document.getElementById('sl-name').value.trim();
   const url   = document.getElementById('sl-url').value.trim();
-  const notes = document.getElementById('sl-notes').value.trim();
+  const notes = type === 'pdf' ? (window._SL_fileText || document.getElementById('sl-notes').value.trim()) : document.getElementById('sl-notes').value.trim();
   if (!name) {
     document.getElementById('sl-name').style.borderColor = 'var(--red)';
     document.getElementById('sl-name').focus();
+    return;
+  }
+  if (type === 'pdf' && !notes) {
+    const fl = document.getElementById('sl-file-label');
+    if (fl) fl.style.borderColor = 'var(--red)';
     return;
   }
   document.getElementById('sl-name').style.borderColor = '';
@@ -3207,7 +3399,109 @@ function SL_confirm() {
   SL_save();
   SL_renderList();
   SL_renderPills();
+  window._SL_fileText = '';
   SL_closeModal();
+}
+
+// ------- File Handler -------
+window._SL_fileText = '';
+function SL_handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const fn = document.getElementById('sl-file-name');
+  const fl = document.getElementById('sl-file-label');
+  // Auto-fill name field if empty
+  const nameEl = document.getElementById('sl-name');
+  if (nameEl && !nameEl.value.trim()) {
+    nameEl.value = file.name.replace(/\.[^.]+$/, '');
+  }
+  fn.textContent = '⏳ Reading file…';
+  fn.style.display = 'block';
+  if (fl) fl.style.borderColor = 'rgba(124,92,252,.5)';
+
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if (ext === 'txt' || ext === 'md') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      window._SL_fileText = e.target.result;
+      fn.textContent = '✅ ' + file.name + ' (' + Math.round(file.size/1024) + ' KB)';
+      if (fl) fl.style.borderColor = 'rgba(57,255,138,.5)';
+    };
+    reader.onerror = () => { fn.textContent = '❌ Could not read file.'; };
+    reader.readAsText(file);
+  } else if (ext === 'pdf') {
+    // Use PDF.js from CDN to extract text
+    if (!window.pdfjsLib) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        SL_extractPDF(file, fn, fl);
+      };
+      document.head.appendChild(script);
+    } else {
+      SL_extractPDF(file, fn, fl);
+    }
+  } else if (ext === 'docx') {
+    if (!window.mammoth) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+      script.onload = () => SL_extractDocx(file, fn, fl);
+      document.head.appendChild(script);
+    } else {
+      SL_extractDocx(file, fn, fl);
+    }
+  } else {
+    // For ppt/pptx and other formats — read as text best-effort
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Try to extract readable text from binary
+      const raw = e.target.result;
+      const text = raw.replace(/[^\x20-\x7E\n\r\t]/g, ' ').replace(/\s{3,}/g,' ').trim().slice(0, 20000);
+      window._SL_fileText = text || '[Could not extract text from this file type. Please copy-paste content into Notes type instead.]';
+      fn.textContent = '✅ ' + file.name + ' (partial text extracted)';
+      if (fl) fl.style.borderColor = 'rgba(255,181,71,.5)';
+    };
+    reader.readAsText(file, 'latin1');
+  }
+}
+function SL_extractPDF(file, fn, fl) {
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
+      let text = '';
+      for (let i = 1; i <= Math.min(pdf.numPages, 50); i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      window._SL_fileText = text.trim().slice(0, 30000);
+      fn.textContent = '✅ ' + file.name + ' (' + pdf.numPages + ' pages extracted)';
+      if (fl) fl.style.borderColor = 'rgba(57,255,138,.5)';
+    } catch(err) {
+      fn.textContent = '❌ PDF extraction failed: ' + err.message;
+      window._SL_fileText = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function SL_extractDocx(file, fn, fl) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    window.mammoth.extractRawText({ arrayBuffer: e.target.result })
+      .then(result => {
+        window._SL_fileText = result.value.trim().slice(0, 30000);
+        fn.textContent = '✅ ' + file.name + ' (text extracted)';
+        if (fl) fl.style.borderColor = 'rgba(57,255,138,.5)';
+      })
+      .catch(err => {
+        fn.textContent = '❌ DOCX extraction failed.';
+        window._SL_fileText = '';
+      });
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ------- Material List -------
@@ -3320,7 +3614,7 @@ function SL_hideTyping() {
 
 function SL_buildSystem() {
   const active = SL_materials.filter(m => SL_active.has(m.id));
-  let sys = `You are StudyBot, an expert AI learning assistant inside GapSync — an AI Career Intelligence platform for Indian students.
+  let sys = `You are Study Buddy, an expert AI learning assistant inside GapSync — an AI Career Intelligence platform for Indian students.
 Help students understand materials, summarize content, answer questions, create quizzes, and build learning paths. Be concise, clear, and use **bold** for key terms.`;
   if (active.length) {
     sys += '\n\n## Student\'s Active Study Materials:\n';
@@ -3416,7 +3710,7 @@ function SL_showKeyPrompt(pendingMsg) {
     <div style="max-width:82%">
       <div style="padding:16px;border-radius:13px;border-top-left-radius:3px;background:rgba(57,255,138,.07);border:1px solid rgba(57,255,138,.3);font-family:var(--mono);font-size:12px;line-height:1.8">
         <p style="margin:0 0 8px"><strong>🔑 Groq API Key Required</strong></p>
-        <p style="margin:0 0 10px;color:var(--muted2)">StudyBot uses <strong style="color:var(--green)">Groq (100% Free)</strong> — powered by LLaMA 3.3 70B, same model as GapSync.</p>
+        <p style="margin:0 0 10px;color:var(--muted2)">Study Buddy uses <strong style="color:var(--green)">Groq (100% Free)</strong> — powered by LLaMA 3.3 70B, same model as GapSync.</p>
         <div style="background:rgba(255,181,71,.08);border:1px solid rgba(255,181,71,.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;color:var(--amber);font-size:11px;line-height:1.9">
           📋 <strong>Get your FREE key:</strong><br>
           1. Go to <strong>console.groq.com</strong> → Sign up free<br>
@@ -3478,7 +3772,7 @@ function SL_keydown(e) {
   <!-- Top Bar -->
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:rgba(16,16,31,.95);flex-shrink:0">
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="logo-mark" style="font-size:15px"><div class="logo-dot"></div>StudyBot</div>
+      <div class="logo-mark" style="font-size:15px"><div class="logo-dot"></div>Study Buddy</div>
       <span style="font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;padding:3px 10px;border-radius:100px;background:rgba(57,255,138,.12);color:var(--green);border:1px solid rgba(57,255,138,.25)">AI LEARNING ASSISTANT</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -3586,6 +3880,19 @@ function SL_keydown(e) {
         <input id="sl-url" type="url" placeholder="https://…"
           style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-family:var(--mono);font-size:12.5px;color:var(--text);outline:none;box-sizing:border-box;transition:border-color .2s"
           onfocus="this.style.borderColor='rgba(124,92,252,.5)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <!-- File Upload (PDF/Doc) -->
+      <div id="sl-file-row" style="display:none;margin-bottom:13px">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Upload File</div>
+        <label id="sl-file-label" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;padding:20px;border:2px dashed rgba(124,92,252,.35);border-radius:10px;cursor:pointer;background:rgba(124,92,252,.04);transition:all .2s;box-sizing:border-box"
+          onmouseover="this.style.borderColor='rgba(124,92,252,.7)';this.style.background='rgba(124,92,252,.09)'"
+          onmouseout="this.style.borderColor='rgba(124,92,252,.35)';this.style.background='rgba(124,92,252,.04)'">
+          <span style="font-size:28px">📄</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted2);text-align:center">Click to upload PDF, DOCX, PPTX, or TXT<br><span style="color:var(--purple-b)">or drag &amp; drop</span></span>
+          <span id="sl-file-name" style="font-family:var(--mono);font-size:10px;color:var(--green);display:none"></span>
+          <input id="sl-file-input" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md" style="display:none" onchange="SL_handleFile(this)">
+        </label>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px">Text is extracted and used as AI context. Max ~5MB.</div>
       </div>
       <!-- Notes -->
       <div id="sl-notes-row" style="display:none;margin-bottom:13px">
