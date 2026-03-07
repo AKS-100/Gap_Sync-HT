@@ -1,6 +1,7 @@
 # 🎯 GapSync — AI-Based Skill Gap Analysis & Career Recommendation Engine
 
 > *"Know your gaps. Own your future."*
+<img width="960" height="510" alt="1" src="https://github.com/user-attachments/assets/0bc62e52-4d20-4d2a-9279-2ce19d778315" />
 
 GapSync is an AI-powered career intelligence platform that compares student skill profiles against real-time industry benchmarks, identifies gaps, and generates hyper-personalized learning roadmaps — in seconds.
 
